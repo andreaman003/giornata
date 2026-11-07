@@ -594,7 +594,7 @@ input[type=time]::-webkit-calendar-picker-indicator,input[type=date]::-webkit-ca
       html += `</section>`;
     });
     if (untimed.length) {
-      html += `<section class="group"><h2>Quando capita <small>senza orario</small></h2>${untimed.map(t => taskHTML(t,isToday,nowMin)).join("")}</section>`;
+      html += `<section class="group"><h2>Task <small>senza orario</small></h2>${untimed.map(t => taskHTML(t,isToday,nowMin)).join("")}</section>`;
     }
     L.innerHTML = `<div style="display:flex;flex-direction:column;gap:14px">${html}</div>`;
   }
