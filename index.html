@@ -1,0 +1,1008 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>La mia Giornata</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Giornata">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#B9BDC3">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&family=JetBrains+Mono:wght@500;600&display=swap">
+<style>
+/* Layout: una colonna da agenda tascabile — riepilogo in alto, poi la giornata divisa per fasce orarie, pulsante + sempre a portata di pollice */
+:root{
+  --bg:#B9BDC3; --surface:#111214; --field:#232427; --ink:#F97316; --muted:#E8833A; --line:#34363A;
+  --accent:#0E7A68; --accent-soft:#2A2B2E; --on-accent:#FFFFFF;
+  --high:#C8452E; --mid:#C98A12; --low:#6B8B85;
+  --f-display:"Bricolage Grotesque", ui-rounded, system-ui, sans-serif;
+  --f-body:"Atkinson Hyperlegible", -apple-system, system-ui, sans-serif;
+  --f-mono:"JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --r:14px; color-scheme:light;
+}
+input,select{color-scheme:dark}
+:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%;overscroll-behavior-y:none}
+body{margin:0}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);background:var(--bg);z-index:25}
+img{max-width:100%}
+[hidden]{display:none!important}
+
+*{box-sizing:border-box}
+html,body{background:var(--bg);color:var(--ink)}
+body{font-family:var(--f-body);font-size:16px;line-height:1.45;-webkit-tap-highlight-color:transparent}
+.wrap{max-width:560px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:12px 120px;display:flex;flex-direction:column;gap:18px}
+button{font:inherit;color:inherit;cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:8px}
+
+/* Testata */
+.top{display:flex;align-items:center;justify-content:space-between;gap:8px;padding-top:6px}
+.daynav{display:flex;gap:6px}
+.iconbtn{width:40px;height:40px;border-radius:12px;border:1px solid var(--line);background:var(--surface);display:grid;place-items:center;font-size:18px}
+.today-btn{height:40px;padding:0 14px;border-radius:12px;border:1px solid var(--line);background:var(--surface);font-weight:700;font-size:14px}
+.today-btn[hidden]{display:none}
+.datehead{min-width:0}
+.eyebrow{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:700}
+.datehead .eyebrow,.datehead h1{color:#111214}
+h1{font-family:var(--f-display);font-weight:800;font-size:clamp(28px,8vw,36px);line-height:1.05;margin:2px 0 0;text-wrap:balance;letter-spacing:-.01em}
+
+/* Riepilogo */
+.summary{display:grid;grid-template-columns:auto 1fr;gap:16px;align-items:center;background:var(--surface);border-radius:20px;padding:16px;border:1px solid var(--line)}
+.ring{width:96px;height:96px;position:relative}
+.ring svg{width:100%;height:100%;transform:rotate(-90deg)}
+.ring .track{stroke:var(--line)} .ring .bar{stroke:var(--accent);transition:stroke-dashoffset .5s ease}
+.ring .pct{position:absolute;inset:0;display:grid;place-items:center;font-family:var(--f-display);font-weight:800;font-size:24px}
+.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;min-width:0}
+.stat b{display:block;font-family:var(--f-mono);font-weight:600;font-size:20px;font-variant-numeric:tabular-nums}
+.stat span{font-size:12px;color:var(--muted)}
+
+/* Prossima */
+.next{display:flex;gap:12px;align-items:center;background:var(--surface);color:var(--ink);border:1px solid var(--accent);border-radius:20px;padding:14px 16px}
+.next[hidden]{display:none}
+.next .lbl{font-size:12px;letter-spacing:.08em;text-transform:uppercase;font-weight:700;opacity:.85}
+.next .t{font-family:var(--f-display);font-weight:700;font-size:20px;line-height:1.2;overflow-wrap:anywhere}
+.next .when{margin-left:auto;text-align:right;font-family:var(--f-mono);font-weight:600;font-size:14px;white-space:nowrap}
+.next .body{min-width:0}
+
+/* Filtri */
+.chips{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;margin-inline:-4px;padding:2px 4px}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex:none;height:36px;padding:0 14px;border-radius:999px;border:1px solid var(--line);background:var(--surface);font-size:14px;font-weight:700;color:var(--muted)}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+
+/* Lista */
+.group{display:flex;flex-direction:column;gap:8px}
+.group h2{display:flex;align-items:baseline;gap:8px;margin:6px 2px 2px;font-family:var(--f-display);font-weight:700;font-size:17px}
+.group h2 small{font-family:var(--f-mono);font-size:12px;color:var(--muted);font-weight:500}
+.task{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:12px 12px 12px 14px;position:relative;overflow:hidden}
+.task::before{content:"";position:absolute;left:0;top:10px;bottom:10px;width:4px;border-radius:0 4px 4px 0;background:#E5484D}
+.task.done::before{background:#3FB950}
+.check{width:30px;height:30px;border-radius:50%;border:2px solid var(--line);background:transparent;display:grid;place-items:center;padding:0}
+.check svg{width:16px;height:16px;opacity:0;stroke:var(--on-accent)}
+.task.done .check{background:var(--accent);border-color:var(--accent)}
+.task.done .check svg{opacity:1}
+.task.done .ttl{text-decoration:line-through;color:var(--muted)}
+.task.done{opacity:.75}
+.task.moved{opacity:.5}
+.main{min-width:0;background:none;border:0;text-align:left;padding:0}
+.ttl{font-weight:700;overflow-wrap:anywhere;line-height:1.3}
+.meta{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px;font-size:12px;color:var(--muted)}
+.tag{padding:1px 8px;border-radius:999px;background:var(--accent-soft);color:var(--ink);font-weight:700}
+.time{font-family:var(--f-mono);font-weight:600;font-size:14px;font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap}
+.time small{display:block;font-size:11px;color:var(--muted);font-weight:500}
+.task.late:not(.done) .time{color:var(--high)}
+.task.now:not(.done){border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+.nowline{display:flex;align-items:center;gap:8px;color:var(--accent);font-family:var(--f-mono);font-size:12px;font-weight:600}
+.nowline::after{content:"";flex:1;height:2px;background:var(--accent);border-radius:2px}
+
+.empty{text-align:center;background:var(--surface);padding:28px 16px;border:1.5px dashed var(--line);border-radius:20px;display:flex;flex-direction:column;gap:10px;align-items:center}
+.empty p{margin:0;color:var(--muted);max-width:32ch}
+.empty .big{font-family:var(--f-display);font-weight:700;font-size:20px;color:var(--ink)}
+.btn{height:44px;padding:0 18px;border-radius:12px;border:1px solid var(--line);background:var(--surface);font-weight:700}
+.btn.primary{background:var(--ink);color:#111214;border-color:var(--ink)}
+.btn.danger{color:var(--high)}
+.carry{display:flex;gap:10px;align-items:center;justify-content:space-between;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:10px 12px;font-size:14px}
+.carry[hidden]{display:none}
+/* Promemoria sport */
+.sport{display:flex;flex-direction:column;gap:8px}
+.sport[hidden]{display:none}
+.sport h2{display:flex;align-items:baseline;gap:8px;margin:0 2px;font-family:var(--f-display);font-weight:700;font-size:17px}
+.sport h2 small{font-family:var(--f-mono);font-size:12px;color:var(--muted);font-weight:500}
+.rem{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;background:var(--surface);border:1px dashed var(--line);border-radius:var(--r);padding:10px 12px}
+.rem.past{opacity:.5}
+.badge{min-width:62px;text-align:center;padding:3px 8px;border-radius:8px;font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:#fff}
+.badge.f1{background:#D9261C} .badge.motogp{background:#5B5F66} .badge.inter{background:#1E4FB8}
+.rem .rt{font-weight:700;line-height:1.3;overflow-wrap:anywhere;min-width:0}
+.rem .rd{font-size:12px;color:var(--muted)}
+.upnext{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--muted);padding:2px 4px}
+.upnext b{color:var(--ink)}
+.status{font-size:12px;color:var(--muted);text-align:center}
+
+/* Pulsante + */
+.fab{position:fixed;right:calc(max(16px,env(safe-area-inset-right,0px)) + 4px);bottom:calc(20px + env(safe-area-inset-bottom,0px));width:60px;height:60px;border-radius:20px;border:0;background:var(--ink);color:#111214;padding:0;display:grid;place-items:center;line-height:1;box-shadow:0 8px 24px rgba(0,0,0,.22);z-index:20}
+
+.fab.cal{right:auto;left:calc(max(16px,env(safe-area-inset-left,0px)) + 4px)}
+
+/* Calendario del mese */
+.calhead{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.calhead h3{text-transform:capitalize}
+.calnav{display:flex;gap:6px}
+.calnav button:not(.xclose){width:40px;height:40px;border-radius:12px;border:1px solid var(--line);background:var(--field);color:var(--ink);font-size:18px}
+.calgrid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
+.calgrid .wd{text-align:center;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);padding-bottom:4px}
+.cday{aspect-ratio:1/1.05;max-width:100%;border-radius:12px;border:1px solid transparent;background:var(--field);color:var(--ink);display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:6px 0 0;gap:4px;font-family:var(--f-mono);font-weight:600;font-size:15px;font-variant-numeric:tabular-nums}
+.cday.out{background:transparent;color:var(--muted);opacity:.45}
+.cday.today{border-color:var(--ink)}
+.cday.sel{background:var(--ink);color:#111214}
+.cday .dots{display:flex;gap:3px;flex-wrap:wrap;justify-content:center;max-width:90%}
+.dot{display:inline-block;width:6px;height:6px;border-radius:50%;flex:none}
+.legend .dot{width:8px;height:8px}
+.dot.todo{background:var(--ink)} .dot.done{background:#3FB950}
+.dot.f1{background:#D9261C} .dot.motogp{background:#9AA0A6} .dot.inter{background:#2F6BFF}
+.cday.sel .dot.todo{background:#111214}
+.cday .cnt{font-size:10px;font-weight:500;color:var(--muted);line-height:1}
+.cday.sel .cnt{color:#111214}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12px;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.daypanel[hidden]{display:none}
+.backup{display:flex;flex-direction:column;gap:8px;border-top:1px solid var(--line);padding-top:12px}
+.shead{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-top:6px}
+.shead h3{min-width:0}
+.xclose{width:40px;height:40px;border-radius:50%;border:0;background:#E5484D;color:#fff;display:grid;place-items:center;padding:0;flex:none;box-shadow:0 4px 12px rgba(229,72,77,.35)}
+.xclose:active{transform:scale(.94)}
+.row[hidden]{display:none}
+.time .end{display:block;font-size:11px;color:var(--muted);font-weight:500}
+.allday{display:flex;align-items:center;gap:12px;font-weight:700;font-size:15px;color:var(--ink);cursor:pointer;user-select:none}
+.allday input{position:absolute;opacity:0;width:1px;height:1px}
+.allday .sw{width:50px;height:30px;border-radius:999px;background:var(--field);border:1px solid var(--line);position:relative;flex:none;transition:background .2s}
+.allday .sw::after{content:"";position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#8A8D93;transition:transform .2s,background .2s}
+.allday input:checked + .sw{background:var(--ink);border-color:var(--ink)}
+.allday input:checked + .sw::after{transform:translateX(20px);background:#111214}
+.allday input:focus-visible + .sw{outline:2px solid var(--ink);outline-offset:2px}
+.time .allday-t{font-size:11px;line-height:1.2;white-space:normal;text-align:right;display:block;max-width:64px}
+.calnote{font-size:12px;color:var(--muted);text-align:center;min-height:16px}
+
+.badge.appt{background:var(--ink);color:#111214}
+.dot.appt{background:#F2F3F5}
+.cday.sel .dot.appt{background:#111214}
+.daypanel{display:flex;flex-direction:column;gap:8px;border-top:1px solid var(--line);padding-top:12px}
+.daypanel h4{margin:0;font-family:var(--f-display);font-size:17px;text-transform:capitalize}
+.dp-list{display:flex;flex-direction:column;gap:6px}
+.dp-item{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;background:var(--field);border-radius:12px;padding:8px 10px;font-size:14px;border:0;color:var(--ink);text-align:left;width:100%}
+.dp-item .rt{font-weight:700;min-width:0;overflow-wrap:anywhere}
+.dp-empty{font-size:13px;color:var(--muted)}
+.dp-actions{display:flex;gap:8px;flex-wrap:wrap}
+.dp-actions .btn{flex:1;min-width:0}
+.appts{display:flex;flex-direction:column;gap:8px}
+.appts[hidden]{display:none}
+.appts h2{display:flex;align-items:baseline;gap:8px;margin:0 2px;font-family:var(--f-display);font-weight:700;font-size:17px}
+.appts h2 small{font-family:var(--f-mono);font-size:12px;color:var(--muted);font-weight:500}
+button.rem{width:100%;text-align:left;font:inherit;color:inherit;border-style:solid;border-color:var(--ink)}
+textarea{font:inherit;font-size:16px;color:var(--ink);background:var(--field);border:1px solid var(--line);border-radius:12px;padding:10px 12px;width:100%;min-width:0;resize:vertical;min-height:46px}
+
+/* Foto delle attività */
+.photos{display:flex;flex-direction:column;gap:8px}
+.photos[hidden]{display:none}
+.plabel{font-size:13px;font-weight:700;color:var(--muted)}
+.thumbs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.thumb{position:relative;aspect-ratio:1/1;max-width:100%;border-radius:12px;overflow:hidden;background:var(--field);border:1px solid var(--line)}
+.thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.thumb .open{position:absolute;inset:0;border:0;background:transparent;padding:0}
+.thumb .rm{position:absolute;top:4px;right:4px;width:24px;height:24px;border-radius:50%;border:0;background:rgba(0,0,0,.7);color:#fff;display:grid;place-items:center;padding:0}
+.thumb.add{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;color:var(--ink);font-weight:700;font-size:12px;border-style:dashed;cursor:pointer}
+.thumb.busy{display:grid;place-items:center;color:var(--muted);font-size:12px}
+.pnote{font-size:12px;color:var(--muted);min-height:0}
+.pnote:empty{display:none}
+.meta .pc{display:inline-flex;align-items:center;gap:4px;color:var(--ink);font-weight:700}
+.viewer{position:fixed;inset:0;z-index:60;background:rgba(0,0,0,.92);display:flex;align-items:center;justify-content:center;padding:calc(16px + env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) calc(16px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+.viewer[hidden]{display:none}
+.viewer img{max-width:100%;max-height:100%;object-fit:contain;border-radius:12px}
+.vclose{position:absolute;top:calc(14px + env(safe-area-inset-top,0px));right:calc(max(16px,env(safe-area-inset-right,0px)));width:44px;height:44px;border-radius:14px;border:0;background:var(--ink);color:#111214;display:grid;place-items:center}
+
+/* Foglio di modifica */
+.scrim{position:fixed;inset:0;background:rgba(10,20,18,.45);z-index:30;opacity:0;pointer-events:none;transition:opacity .2s}
+.scrim.open{opacity:1;pointer-events:auto}
+.sheet{position:fixed;left:0;right:0;bottom:0;z-index:31;background:var(--surface);border-radius:22px 22px 0 0;padding:10px max(16px,env(safe-area-inset-right,0px)) calc(18px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));transform:translateY(105%);transition:transform .25s ease;max-height:92%;overflow-y:auto}
+.sheet.open{transform:none}
+.sheet form{max-width:560px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
+.grab{width:40px;height:5px;border-radius:3px;background:var(--line);margin:0 auto 4px}
+.sheet h3{margin:0;font-family:var(--f-display);font-size:22px}
+label.f[hidden]{display:none}
+label.f{display:flex;flex-direction:column;gap:6px;font-size:13px;font-weight:700;color:var(--muted)}
+input[type=text],input[type=time],input[type=date],select{font:inherit;font-size:16px;color:var(--ink);background:var(--field);border:1px solid var(--line);border-radius:12px;height:46px;padding:0 12px;width:100%;min-width:0}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.seg{display:flex;gap:6px;flex-wrap:wrap}
+.seg button{flex:1;min-width:0;height:40px;border-radius:10px;border:1px solid var(--line);background:var(--field);font-weight:700;font-size:14px}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.actions{display:flex;gap:10px;justify-content:space-between;flex-wrap:wrap}
+.actions .right{display:flex;gap:10px;margin-left:auto}
+.confirm{display:flex;gap:8px;align-items:center;font-size:14px}
+.confirm[hidden]{display:none}
+
+/* Scorri a sinistra per eliminare */
+.swipe{position:relative;border-radius:var(--r);overflow:hidden}
+.swipe .del-bg{position:absolute;inset:0;background:#D92D20;display:flex;align-items:center;justify-content:flex-end;padding-right:20px;color:#fff;font-weight:700;font-size:14px;gap:6px;border-radius:var(--r);visibility:hidden}
+.swipe.on .del-bg{visibility:visible}
+.swipe .task{touch-action:pan-y;transition:transform .2s ease;will-change:transform}
+.swipe .task.dragging{transition:none}
+.swipe.gone{transition:height .22s ease,opacity .22s ease;opacity:0}
+.undo{position:fixed;left:50%;bottom:calc(92px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);display:flex;gap:14px;align-items:center;background:var(--surface);color:var(--ink);border:1px solid var(--line);padding:8px 8px 8px 16px;border-radius:14px;font-size:14px;font-weight:700;z-index:41;box-shadow:0 8px 24px rgba(0,0,0,.25);white-space:nowrap}
+.undo[hidden]{display:none}
+.undo button{height:34px;padding:0 14px;border-radius:10px;border:0;background:var(--ink);color:#111214;font-weight:700}
+.toast{position:fixed;left:50%;bottom:calc(92px + env(safe-area-inset-bottom,0px));transform:translateX(-50%) translateY(20px);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:12px;font-size:14px;font-weight:700;opacity:0;transition:.2s;z-index:40;pointer-events:none;white-space:nowrap}
+.toast.show{opacity:1;transform:translateX(-50%)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header class="top">
+    <div class="datehead">
+      <div class="eyebrow" id="weekday">—</div>
+      <h1 id="dateTitle">Oggi</h1>
+    </div>
+    <div class="daynav">
+      <button class="iconbtn" id="prev" aria-label="Giorno precedente">‹</button>
+      <button class="today-btn" id="goToday" hidden>Oggi</button>
+      <button class="iconbtn" id="next" aria-label="Giorno successivo">›</button>
+    </div>
+  </header>
+
+  <section class="summary" aria-label="Riepilogo">
+    <div class="ring">
+      <svg viewBox="0 0 100 100"><circle class="track" cx="50" cy="50" r="42" fill="none" stroke-width="10"/><circle class="bar" id="ringBar" cx="50" cy="50" r="42" fill="none" stroke-width="10" stroke-linecap="round" stroke-dasharray="263.9" stroke-dashoffset="263.9"/></svg>
+      <div class="pct" id="pct">0%</div>
+    </div>
+    <div class="stats">
+      <div class="stat"><b id="sDone">0/0</b><span>completate</span></div>
+      <div class="stat"><b id="sLeft">0</b><span>da fare</span></div>
+      <div class="stat"><b id="sHigh">0</b><span>urgenti</span></div>
+    </div>
+  </section>
+
+  <section class="next" id="nextCard" hidden>
+    <div class="body"><div class="lbl" id="nextLbl">Prossima</div><div class="t" id="nextTitle"></div></div>
+    <div class="when" id="nextWhen"></div>
+  </section>
+
+
+  <section class="appts" id="appts" hidden aria-label="Appuntamenti"></section>
+
+  <nav class="chips" id="chips" aria-label="Filtri"></nav>
+
+  <main id="list"></main>
+
+  <section class="sport" id="sport" hidden aria-label="Promemoria sport"></section>
+  <div class="status" id="status">Caricamento…</div>
+</div>
+
+<button class="fab cal" id="calFab" aria-label="Calendario del mese"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="3"/><path d="M3.5 10h17M8 3v4M16 3v4"/><circle cx="8.5" cy="14.5" r="0.6" fill="currentColor"/><circle cx="12" cy="14.5" r="0.6" fill="currentColor"/><circle cx="15.5" cy="14.5" r="0.6" fill="currentColor"/></svg></button>
+<button class="fab" id="fab" aria-label="Nuova attività"><svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" aria-hidden="true"><path d="M12 4v16M4 12h16"/></svg></button>
+
+<div class="scrim" id="scrim"></div>
+<div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
+  <form id="form" autocomplete="off">
+    <div class="shead"><h3 id="sheetTitle">Nuova attività</h3><button type="button" class="xclose" id="sheetX" aria-label="Chiudi"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+    <label class="f">Cosa devi fare
+      <input type="text" id="fTitle" placeholder="Es. Chiamare il commercialista" required maxlength="120">
+    </label>
+    <label class="f">Ora (facoltativa)<input type="time" id="fTime"></label>
+    <div class="f" style="font-size:13px;font-weight:700;color:var(--muted)">Priorità
+      <div class="seg" id="fPrio" style="margin-top:6px">
+        <button type="button" data-v="alta">Alta</button><button type="button" data-v="media">Media</button><button type="button" data-v="bassa">Bassa</button>
+      </div>
+    </div>
+    <label class="f">Area
+      <select id="fCat"><option>Lavoro</option><option>Personale</option><option>Casa</option><option>Salute</option><option>Studio</option><option>Commissioni</option></select>
+    </label>
+    <div class="photos" id="fPhotosWrap" hidden>
+      <span class="plabel">Foto</span>
+      <div class="thumbs" id="fThumbs"></div>
+      <input type="file" id="fPhoto" accept="image/*" multiple hidden>
+      <div class="pnote" id="fPhotoNote"></div>
+    </div>
+    <div class="actions">
+      <button type="button" class="btn danger" id="delBtn" hidden>Elimina</button>
+      <div class="confirm" id="confirmDel" hidden><span>Eliminare?</span><button type="button" class="btn danger" id="delYes" style="height:36px">Sì, elimina</button><button type="button" class="btn" id="delNo" style="height:36px">No</button></div>
+      <div class="right"><button type="button" class="btn" id="cancel">Annulla</button><button type="submit" class="btn primary">Salva</button></div>
+    </div>
+  </form>
+</div>
+<div class="sheet" id="calSheet" role="dialog" aria-modal="true" aria-labelledby="calTitle">
+  <div style="max-width:560px;margin:0 auto;display:flex;flex-direction:column;gap:12px">
+    <div class="calhead" style="padding-top:6px"><h3 id="calTitle">Mese</h3>
+      <div class="calnav"><button type="button" id="calPrev" aria-label="Mese precedente">‹</button><button type="button" id="calNext" aria-label="Mese successivo">›</button><button type="button" class="xclose" id="calX" aria-label="Chiudi calendario" style="margin-left:4px"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div></div>
+    <div class="calgrid" id="calGrid"></div>
+    <div class="legend"><span><i class="dot appt"></i>appuntamento</span><span><i class="dot todo"></i>da fare</span><span><i class="dot done"></i>tutto fatto</span><span><i class="dot f1"></i>F1</span><span><i class="dot motogp"></i>MotoGP</span><span><i class="dot inter"></i>Inter</span></div>
+    <div class="calnote" id="calNote"></div>
+    <div class="daypanel" id="dayPanel" hidden>
+      <h4 id="dpTitle"></h4>
+      <div class="dp-list" id="dpList"></div>
+      <div class="dp-actions"><button type="button" class="btn primary" id="dpAdd">+ Appuntamento</button><button type="button" class="btn" id="dpOpen">Apri giorno</button></div>
+    </div>
+    <div class="backup">
+      <span class="plabel">Backup dei dati</span>
+      <div class="dp-actions"><button type="button" class="btn" id="bkExport">Salva backup</button><label class="btn" for="bkFile" style="display:grid;place-items:center">Ripristina backup</label></div>
+      <input type="file" id="bkFile" accept="application/json,.json" hidden>
+      <div class="pnote" id="bkNote"></div>
+    </div>
+    <button type="button" class="btn" id="calClose">Chiudi</button>
+  </div>
+</div>
+<div class="sheet" id="apSheet" role="dialog" aria-modal="true" aria-labelledby="apTitle" style="z-index:33">
+  <form id="apForm" autocomplete="off" style="max-width:560px;margin:0 auto;display:flex;flex-direction:column;gap:14px">
+    <div class="shead"><h3 id="apTitle">Nuovo appuntamento</h3><button type="button" class="xclose" id="apX" aria-label="Chiudi"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+    <label class="f">Appuntamento
+      <input type="text" id="apName" placeholder="Es. Dentista, cena con Marco" required maxlength="120">
+    </label>
+    <label class="f">Giorno<input type="date" id="apDate" required></label>
+    <div class="row" id="apTimeWrap">
+      <label class="f">Inizio<input type="time" id="apTime"></label>
+      <label class="f">Fine<input type="time" id="apEnd"></label>
+    </div>
+    <div class="pnote" id="apNote" style="color:#E5484D"></div>
+    <label class="allday" for="apAllDay"><input type="checkbox" id="apAllDay"><span class="sw" aria-hidden="true"></span>Tutto il giorno</label>
+    <label class="f">Luogo o nota (facoltativo)
+      <input type="text" id="apPlace" placeholder="Es. Via Roma 12" maxlength="160">
+    </label>
+    <div class="actions">
+      <button type="button" class="btn danger" id="apDel" hidden>Elimina</button>
+      <div class="confirm" id="apConfirm" hidden><span>Eliminare?</span><button type="button" class="btn danger" id="apDelYes" style="height:36px">Sì, elimina</button><button type="button" class="btn" id="apDelNo" style="height:36px">No</button></div>
+      <div class="right"><button type="button" class="btn" id="apCancel">Annulla</button><button type="submit" class="btn primary">Salva</button></div>
+    </div>
+  </form>
+</div>
+<div class="viewer" id="viewer" hidden role="dialog" aria-modal="true" aria-label="Foto">
+  <img id="viewerImg" alt="Foto dell'attività">
+  <button type="button" class="vclose" id="viewerClose" aria-label="Chiudi foto"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+</div>
+<div class="toast" id="toast" role="status"></div>
+<div class="undo" id="undo" hidden role="status"><span id="undoTxt">Attività eliminata</span><button type="button" id="undoBtn">Annulla</button></div>
+
+<script>
+(() => {
+  const $ = s => document.getElementById(s);
+  const pad = n => String(n).padStart(2, "0");
+  const keyOf = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+  const fromKey = k => { const [y,m,d] = k.split("-").map(Number); return new Date(y, m-1, d); };
+  const addDays = (k, n) => { const d = fromKey(k); d.setDate(d.getDate()+n); return keyOf(d); };
+  const toMin = t => t ? (+t.slice(0,2))*60 + (+t.slice(3,5)) : null;
+  const fmtDur = m => m >= 60 ? (m % 60 ? `${Math.floor(m/60)}h${pad(m%60)}` : `${m/60}h`) : `${m}m`;
+  const esc = s => String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+  const uid = () => Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4);
+
+  const state = { day: keyOf(new Date()), tasks: [], appts: [], filter: "tutte", editing: null, prio: "media" };
+  let sportEvents = [], assetsNs = null;
+  const photoUrl = {};
+  const BLANK = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
+  const srcOf = id => photoUrl[id] || BLANK;
+  let store = null, unsub = null, writeChain = Promise.resolve(), loadTimer = null;
+
+  /* ---------- Archiviazione sul dispositivo ---------- */
+  const local = {
+    get(k){ try { return JSON.parse(localStorage.getItem("giornata:"+k) || "null"); } catch { return null; } },
+    set(k, v){ try { localStorage.setItem("giornata:"+k, JSON.stringify(v)); } catch { toast("Memoria piena: elimina qualche attività vecchia"); } }
+  };
+
+  /* Foto: salvate nel database del browser (IndexedDB) */
+  const idb = (() => {
+    let dbp = null;
+    const open = () => dbp || (dbp = new Promise((res, rej) => {
+      const r = indexedDB.open("giornata-foto", 1);
+      r.onupgradeneeded = () => r.result.createObjectStore("foto");
+      r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error);
+    }));
+    const run = async (mode, fn) => { const db = await open(); return new Promise((res, rej) => {
+      const t = db.transaction("foto", mode); const req = fn(t.objectStore("foto"));
+      t.oncomplete = () => res(req ? req.result : undefined); t.onerror = () => rej(t.error); t.onabort = () => rej(t.error);
+    }); };
+    return { put: (id, b) => run("readwrite", st => st.put(b, id)), get: id => run("readonly", st => st.get(id)) };
+  })();
+  const photoLoads = {};
+  function loadPhoto(id){
+    if (photoUrl[id]) return Promise.resolve(photoUrl[id]);
+    return photoLoads[id] || (photoLoads[id] = idb.get(id).then(b => {
+      if (!b) return null;
+      photoUrl[id] = URL.createObjectURL(b);
+      document.querySelectorAll("img[data-pid]").forEach(i => { if (i.dataset.pid === id) { i.src = photoUrl[id]; i.style.opacity = 1; } });
+      return photoUrl[id];
+    }).catch(() => null));
+  }
+  if ("indexedDB" in window) assetsNs = {
+    async upload(blob){
+      const id = uid() + uid();
+      await idb.put(id, blob);
+      photoUrl[id] = URL.createObjectURL(blob);
+      return { id, url: photoUrl[id] };
+    }
+  };
+
+  async function loadSport(){
+    const c = local.get("sport");
+    if (Array.isArray(c?.events)) { sportEvents = c.events; renderSport(); }
+    try {
+      const r = await fetch("sport.json", { cache: "no-cache" });
+      if (r.ok) { const d = await r.json(); if (Array.isArray(d.events)) { sportEvents = d.events; local.set("sport", d); renderSport(); } }
+    } catch {}
+  }
+
+  async function initStore(){
+    try { navigator.storage?.persist?.(); } catch {}
+    loadSport();
+    subscribe();
+  }
+
+  function subscribe(){
+    if (unsub) { unsub(); unsub = null; }
+    clearTimeout(loadTimer);
+    const day = state.day;
+    if (!store) {
+      state.tasks = (local.get(day)?.tasks) || []; state.appts = (local.get(day)?.appts) || [];
+      setStatus("Salvato su questo dispositivo · funziona anche offline");
+      render(); autoCarry(); return;
+    }
+    setStatus("Caricamento…");
+    loadTimer = setTimeout(() => setStatus("Connessione lenta: i dati potrebbero non essere aggiornati"), 10000);
+    unsub = store.col.doc(day).onSnapshot(snap => {
+      if (day !== state.day) return;
+      if (!snap.metadata.fromCache) { clearTimeout(loadTimer); setStatus("Sincronizzato con il tuo account"); }
+      const d = snap.exists ? snap.data() : null;
+      state.tasks = d && Array.isArray(d.tasks) ? d.tasks.map(t => ({...t})) : [];
+      state.appts = d && Array.isArray(d.appts) ? d.appts.map(a => ({...a})) : [];
+      render(); if (!snap.metadata.fromCache) autoCarry();
+    }, () => { clearTimeout(loadTimer); store = null; setStatus("Salvato su questo dispositivo"); subscribe(); });
+  }
+
+  function save(){
+    const day = state.day, body = { tasks: state.tasks.map(t => ({...t})), appts: state.appts.map(a => ({...a})), updatedAt: new Date().toISOString() };
+    local.set(day, body);
+    render();
+    if (!store) return;
+    writeChain = writeChain.then(() => store.col.doc(day).set(body)).catch(e => {
+      toast(e?.code === "quota_exceeded" ? "Spazio esaurito: elimina vecchie attività" : "Non salvato sull'account, riprova");
+    });
+  }
+
+  async function getDay(k){
+    if (!store) return local.get(k);
+    try { const s = await store.col.doc(k).get(); return s.exists ? s.data() : null; } catch { return null; }
+  }
+
+  /* ---------- Rimando automatico: le attività non fatte passano a oggi, in priorità alta ---------- */
+  let carrying = false;
+  async function setDay(k, body){
+    local.set(k, body);
+    if (!store) return;
+    writeChain = writeChain.then(() => store.col.doc(k).set(body)).catch(() => {});
+    await writeChain;
+  }
+  async function autoCarry(){
+    const today = keyOf(new Date());
+    if (carrying || state.day !== today) return;
+    carrying = true;
+    try {
+      let moved = 0;
+      for (let i = 7; i >= 1; i--) {
+        const k = addDays(today, -i);
+        const d = await getDay(k);
+        if (state.day !== today) return;
+        const tasks = Array.isArray(d?.tasks) ? d.tasks.map(t => ({...t})) : [];
+        const open = tasks.filter(t => !t.done && !t.movedTo);
+        if (!open.length) continue;
+        open.forEach(t => {
+          if (!state.tasks.some(x => x.from === t.id))
+            state.tasks.push({ ...t, id: uid(), from: t.id, origDay: t.origDay || k, prio: "alta", done: false, movedTo: undefined });
+          t.movedTo = today;
+        });
+        moved += open.length;
+        await setDay(k, { tasks: tasks, appts: Array.isArray(d?.appts) ? d.appts : [], updatedAt: new Date().toISOString() });
+      }
+      if (moved) {
+        state.tasks = state.tasks.map(t => { const c = {...t}; delete c.movedTo; return c; });
+        save();
+        toast(moved === 1 ? "1 attività non fatta spostata a oggi" : `${moved} attività non fatte spostate a oggi`);
+      }
+    } finally { carrying = false; }
+  }
+
+  /* ---------- Rendering ---------- */
+  const FILTERS = [["tutte","Tutte"],["dafare","Da fare"],["fatte","Fatte"],["alta","Urgenti"]];
+  function renderChips(){
+    $("chips").innerHTML = FILTERS.map(([v,l]) => `<button class="chip" data-f="${v}" aria-pressed="${state.filter===v}">${l}</button>`).join("");
+  }
+  $("chips").onclick = e => { const b = e.target.closest(".chip"); if (!b) return; state.filter = b.dataset.f; render(); };
+
+  const SLOTS = [["Mattina","06–12",0,720],["Pomeriggio","12–18",720,1080],["Sera","18–24",1080,1440]];
+
+  function render(){
+    renderChips(); renderSport(); renderAppts();
+    const now = new Date(), nowMin = now.getHours()*60 + now.getMinutes();
+    const isToday = state.day === keyOf(now);
+    const d = fromKey(state.day);
+    $("weekday").textContent = isToday ? "Oggi · " + d.toLocaleDateString("it-IT",{weekday:"long"}) :
+      d.toLocaleDateString("it-IT",{weekday:"long"});
+    $("dateTitle").textContent = d.toLocaleDateString("it-IT",{day:"numeric",month:"long"});
+    $("goToday").hidden = isToday;
+
+    const all = state.tasks, done = all.filter(t => t.done).length;
+    const pct = all.length ? Math.round(done/all.length*100) : 0;
+    $("pct").textContent = pct + "%";
+    $("ringBar").style.strokeDashoffset = 263.9 * (1 - pct/100);
+    $("sDone").textContent = `${done}/${all.length}`;
+    $("sLeft").textContent = all.filter(t => !t.done).length;
+    $("sHigh").textContent = all.filter(t => !t.done && t.prio === "alta").length;
+
+    // Prossima attività
+    const nc = $("nextCard");
+    const pending = all.filter(t => !t.done && t.time).sort((a,b) => toMin(a.time)-toMin(b.time));
+    const cur = null;
+    const nxt = isToday && pending.find(t => toMin(t.time) > nowMin);
+    const pick = cur || nxt;
+    if (pick) {
+      nc.hidden = false;
+      $("nextLbl").textContent = cur ? "In corso adesso" : "Prossima";
+      $("nextTitle").textContent = pick.title;
+      const diff = toMin(pick.time) - nowMin;
+      $("nextWhen").innerHTML = cur ? "" :
+        `${pick.time}<br>${diff < 60 ? "tra " + diff + " min" : "tra " + fmtDur(diff)}`;
+    } else nc.hidden = true;
+
+    // Lista
+    let list = all.slice();
+    if (state.filter === "dafare") list = list.filter(t => !t.done);
+    if (state.filter === "fatte") list = list.filter(t => t.done);
+    if (state.filter === "alta") list = list.filter(t => t.prio === "alta");
+    const L = $("list");
+    if (!all.length) {
+      L.innerHTML = `<div class="empty"><div class="big">Giornata libera</div>
+        <p>Aggiungi la prima attività con il pulsante +. Puoi indicare un orario e la priorità.</p>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center">
+          <button class="btn primary" id="emptyAdd">Aggiungi attività</button></div></div>`;
+      $("emptyAdd").onclick = () => openSheet();
+      return;
+    }
+    if (!list.length) { L.innerHTML = `<div class="empty"><p>Nessuna attività in questo filtro.</p></div>`; return; }
+
+    const carried = list.filter(t => t.from && !t.done).sort((a,b) => (a.origDay||"").localeCompare(b.origDay||"") || (toMin(a.time)??9999)-(toMin(b.time)??9999));
+    const rest = list.filter(t => !(t.from && !t.done));
+    const timed = rest.filter(t => t.time).sort((a,b) => toMin(a.time)-toMin(b.time));
+    const untimed = rest.filter(t => !t.time).sort((a,b) => prioRank(a)-prioRank(b));
+    let html = "";
+    if (carried.length) html += `<section class="group"><h2>Da recuperare <small>non fatte nei giorni scorsi</small></h2>${carried.map(t => taskHTML(t,false,0)).join("")}</section>`;
+    SLOTS.forEach(([name, range, a, b]) => {
+      const items = timed.filter(t => { const m = toMin(t.time); return m >= a && m < b || (a === 0 && m < 360); });
+      if (!items.length) return;
+      html += `<section class="group"><h2>${name} <small>${range}</small></h2>`;
+      let lineDone = !isToday || nowMin < a || nowMin >= b;
+      items.forEach(t => {
+        if (!lineDone && toMin(t.time) > nowMin) { html += nowLine(nowMin); lineDone = true; }
+        html += taskHTML(t, isToday, nowMin);
+      });
+      if (!lineDone) html += nowLine(nowMin);
+      html += `</section>`;
+    });
+    if (untimed.length) {
+      html += `<section class="group"><h2>Quando capita <small>senza orario</small></h2>${untimed.map(t => taskHTML(t,isToday,nowMin)).join("")}</section>`;
+    }
+    L.innerHTML = `<div style="display:flex;flex-direction:column;gap:14px">${html}</div>`;
+  }
+  const SPORT_LBL = { f1: "F1", motogp: "MotoGP", inter: "Inter" };
+  const apSortKey = a => a.allDay ? "00" : (a.time || "99");
+  const apTimeHTML = a => a.allDay ? `<span class="allday-t">Tutto il giorno</span>` : esc(a.time || "—") + (a.time && a.end ? `<span class="end">fino ${esc(a.end)}</span>` : "");
+  function renderAppts(){
+    const box = $("appts"); if (!box) return;
+    const list = state.appts.slice().sort((a,b) => apSortKey(a).localeCompare(apSortKey(b)));
+    if (!list.length) { box.hidden = true; box.innerHTML = ""; return; }
+    const now = new Date(), today = keyOf(now), nowMin = now.getHours()*60 + now.getMinutes();
+    box.innerHTML = `<h2>Appuntamenti <small>${list.length}</small></h2>` + list.map(a => {
+      const past = state.day < today || (state.day === today && !a.allDay && a.time && (a.end ? toMin(a.end) : toMin(a.time) + 60) < nowMin);
+      return `<button type="button" class="rem${past ? " past" : ""}" data-appt="${a.id}"><span class="badge appt">Appunt.</span>
+        <div style="min-width:0"><div class="rt">${esc(a.title)}</div>${a.place ? `<div class="rd">${esc(a.place)}</div>` : ""}</div>
+        <div class="time">${apTimeHTML(a)}</div></button>`;
+    }).join("");
+    box.hidden = false;
+  }
+  $("appts").addEventListener("click", e => {
+    const b = e.target.closest("[data-appt]"); if (!b) return;
+    const a = state.appts.find(x => x.id === b.dataset.appt); if (a) openAppt(state.day, a);
+  });
+
+  /* ---------- Appuntamenti: crea, modifica, elimina ---------- */
+  let apEdit = null; // {day, id}
+  function openAppt(day, a){
+    apEdit = a ? { day, id: a.id } : null;
+    $("apTitle").textContent = a ? "Modifica appuntamento" : "Nuovo appuntamento";
+    $("apName").value = a?.title || ""; $("apDate").value = day; $("apTime").value = a?.time || ""; $("apEnd").value = a?.end || ""; $("apNote").textContent = ""; $("apPlace").value = a?.place || "";
+    $("apAllDay").checked = !!a?.allDay; $("apTimeWrap").hidden = !!a?.allDay;
+    $("apDel").hidden = !a; $("apConfirm").hidden = true;
+    $("scrim").classList.add("open"); $("apSheet").classList.add("open");
+    setTimeout(() => { if (!a) $("apName").focus(); }, 260);
+  }
+  function closeAppt(){
+    $("apSheet").classList.remove("open"); apEdit = null; document.activeElement?.blur();
+    if (!$("calSheet").classList.contains("open")) $("scrim").classList.remove("open");
+  }
+  async function readDay(k){
+    if (k === state.day) return { tasks: state.tasks.map(t => ({...t})), appts: state.appts.map(a => ({...a})) };
+    const d = await getDay(k);
+    return { tasks: Array.isArray(d?.tasks) ? d.tasks : [], appts: Array.isArray(d?.appts) ? d.appts.map(a => ({...a})) : [] };
+  }
+  async function writeDayAppts(k, appts){
+    if (k === state.day) { state.appts = appts; save(); }
+    else { const d = await readDay(k); await setDay(k, { tasks: d.tasks, appts, updatedAt: new Date().toISOString() }); }
+    calData[k] = { ...(calData[k] || {}), tasks: k === state.day ? state.tasks : (calData[k]?.tasks || []), appts };
+    if ($("calSheet").classList.contains("open")) { renderCal(); renderDayPanel(); }
+  }
+  $("apForm").addEventListener("submit", async e => {
+    e.preventDefault();
+    const title = $("apName").value.trim(), day = $("apDate").value; if (!title || !day) return;
+    const allDay = $("apAllDay").checked;
+    const start = allDay ? "" : ($("apTime").value || ""), end = allDay ? "" : ($("apEnd").value || "");
+    if (end && !start) { $("apNote").textContent = "Indica anche l'ora di inizio."; return; }
+    if (end && start && toMin(end) <= toMin(start)) { $("apNote").textContent = "L'ora di fine deve essere dopo l'inizio."; return; }
+    const item = { title, time: start, end, allDay, place: $("apPlace").value.trim() };
+    const ed = apEdit; closeAppt();
+    if (ed && ed.day !== day) {           // spostato in un altro giorno
+      const from = await readDay(ed.day); await writeDayAppts(ed.day, from.appts.filter(a => a.id !== ed.id));
+    }
+    const to = await readDay(day);
+    if (ed && ed.day === day) { const a = to.appts.find(x => x.id === ed.id); if (a) Object.assign(a, item); else to.appts.push({ id: ed.id, ...item }); }
+    else to.appts.push({ id: ed?.id || uid(), ...item });
+    await writeDayAppts(day, to.appts);
+    toast(ed ? "Appuntamento aggiornato" : "Appuntamento aggiunto");
+  });
+  $("apAllDay").onchange = () => { $("apTimeWrap").hidden = $("apAllDay").checked; $("apNote").textContent = ""; };
+  $("apTime").addEventListener("change", () => {
+    const st = $("apTime").value, en = $("apEnd").value; $("apNote").textContent = "";
+    if (st && (!en || toMin(en) <= toMin(st))) $("apEnd").value = minToT(Math.min(toMin(st) + 60, 23*60 + 59));
+  });
+  $("apEnd").addEventListener("change", () => { $("apNote").textContent = ""; });
+  $("apCancel").onclick = closeAppt;
+  $("apX").onclick = closeAppt;
+  $("sheetX").onclick = () => closeSheet();
+  $("apDel").onclick = () => { $("apDel").hidden = true; $("apConfirm").hidden = false; };
+  $("apDelNo").onclick = () => { $("apDel").hidden = false; $("apConfirm").hidden = true; };
+  $("apDelYes").onclick = async () => {
+    const ed = apEdit; closeAppt(); if (!ed) return;
+    const d = await readDay(ed.day); await writeDayAppts(ed.day, d.appts.filter(a => a.id !== ed.id));
+    toast("Appuntamento eliminato");
+  };
+
+  function renderSport(){
+    const box = $("sport"); if (!box) return;
+    if (!sportEvents.length) { box.hidden = true; return; }
+    const now = new Date(), today = keyOf(now), nowMin = now.getHours()*60 + now.getMinutes();
+    const todays = sportEvents.filter(e => e.date === state.day).sort((a,b) => (a.time||"").localeCompare(b.time||""));
+    let html = "";
+    if (todays.length) {
+      html += `<h2>Sport <small>promemoria</small></h2>` + todays.map(e => {
+        const past = state.day < today || (state.day === today && toMin(e.time) + 30 < nowMin);
+        return `<div class="rem${past ? " past" : ""}"><span class="badge ${esc(e.sport)}">${SPORT_LBL[e.sport] || esc(e.sport)}</span>
+          <div style="min-width:0"><div class="rt">${esc(e.title)}</div>${e.detail ? `<div class="rd">${esc(e.detail)}${e.confirmed === false ? " · orario da confermare" : ""}</div>` : ""}</div>
+          <div class="time">${esc(e.time || "—")}</div></div>`;
+      }).join("");
+    }
+    // Prossimo appuntamento per ogni sport (dopo il giorno mostrato)
+    const nowStamp = state.day === today ? today + " " + minToT(nowMin) : state.day + " 23:59";
+    const ups = Object.keys(SPORT_LBL).map(sp => sportEvents
+      .filter(e => e.sport === sp && (e.date + " " + (e.time || "00:00")) > nowStamp && e.date !== state.day)
+      .sort((a,b) => (a.date + a.time).localeCompare(b.date + b.time))[0]).filter(Boolean);
+    if (ups.length) {
+      html += `<div class="upnext">${todays.length ? "" : `<b style="font-family:var(--f-display);font-size:15px">Prossimi appuntamenti sport</b>`}` + ups.map(e =>
+        `<span><b>${SPORT_LBL[e.sport]}</b> · ${esc(e.title)} — ${fromKey(e.date).toLocaleDateString("it-IT",{weekday:"short",day:"numeric",month:"short"})} ${esc(e.time||"")}${e.confirmed === false ? " (da confermare)" : ""}</span>`).join("") + `</div>`;
+    }
+    box.innerHTML = html; box.hidden = !html;
+  }
+  const minToT = m => `${pad(Math.floor(m/60)%24)}:${pad(m%60)}`;
+  const prioRank = t => ({alta:0,media:1,bassa:2}[t.prio] ?? 1);
+  const nowLine = m => `<div class="nowline">ora ${minToT(m)}</div>`;
+  function taskHTML(t, isToday, nowMin){
+    const s = toMin(t.time);
+    const cls = ["task", t.done && "done", t.movedTo && !t.done && "moved", isToday && s != null && s < nowMin && "late"].filter(Boolean).join(" ");
+    return `<div class="swipe" data-id="${t.id}"><div class="del-bg" aria-hidden="true">Elimina</div><div class="${cls}" data-p="${t.prio}" data-id="${t.id}">
+      <button class="check" data-act="toggle" aria-label="${t.done ? "Segna da fare" : "Segna come fatta"}: ${esc(t.title)}"><svg viewBox="0 0 24 24" fill="none" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7"/></svg></button>
+      <button class="main" data-act="edit"><div class="ttl">${esc(t.title)}</div>
+        <div class="meta"><span class="tag">${esc(t.cat||"Personale")}</span><span>${t.prio==="alta"?"Priorità alta":t.prio==="bassa"?"Priorità bassa":"Priorità media"}</span>${t.from?`<span>rimandata dal ${fromKey(t.origDay||state.day).toLocaleDateString("it-IT",{day:"numeric",month:"short"})}</span>`:""}${t.movedTo?"<span>spostata in avanti</span>":""}${t.photos?.length?`<span class="pc"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-2.5h6L17 8h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>${t.photos.length}</span>`:""}</div></button>
+      <div class="time">${t.time ? esc(t.time) : "—"}</div></div></div>`;
+  }
+
+  /* ---------- Scorri a sinistra per eliminare ---------- */
+  let sw = null, suppressClick = false, undoState = null, undoTimer;
+  const L0 = $("list");
+  L0.addEventListener("pointerdown", e => {
+    const card = e.target.closest(".swipe .task"); if (!card || (e.pointerType === "mouse" && e.button !== 0)) return;
+    sw = { card, wrap: card.parentElement, x: e.clientX, y: e.clientY, dx: 0, active: false, id: e.pointerId };
+  });
+  L0.addEventListener("pointermove", e => {
+    if (!sw || e.pointerId !== sw.id) return;
+    const dx = e.clientX - sw.x, dy = e.clientY - sw.y;
+    if (!sw.active) {
+      if (Math.abs(dy) > 10 && Math.abs(dy) > Math.abs(dx)) { sw = null; return; }
+      if (dx < -10 && Math.abs(dx) > Math.abs(dy)) { sw.active = true; sw.wrap.classList.add("on"); sw.card.classList.add("dragging"); try { sw.card.setPointerCapture(e.pointerId); } catch {} }
+      else return;
+    }
+    sw.dx = Math.min(0, dx);
+    sw.card.style.transform = `translateX(${sw.dx}px)`;
+  });
+  const endSwipe = e => {
+    if (!sw || (e && e.pointerId !== sw.id)) return;
+    const s0 = sw; sw = null;
+    if (!s0.active) return;
+    suppressClick = true; setTimeout(() => suppressClick = false, 60);
+    s0.card.classList.remove("dragging");
+    const w = s0.card.offsetWidth;
+    if (s0.dx < -Math.min(120, w * 0.35)) {
+      s0.card.style.transform = `translateX(${-w - 20}px)`;
+      const h = s0.wrap.offsetHeight; s0.wrap.style.height = h + "px";
+      requestAnimationFrame(() => { s0.wrap.classList.add("gone"); s0.wrap.style.height = "0px"; });
+      setTimeout(() => removeTask(s0.wrap.dataset.id), 230);
+    } else { s0.card.style.transform = ""; setTimeout(() => s0.wrap.classList.remove("on"), 220); }
+  };
+  L0.addEventListener("pointerup", endSwipe);
+  L0.addEventListener("pointercancel", e => { if (sw && sw.active) { sw.card.classList.remove("dragging"); sw.card.style.transform = ""; } sw = null; });
+
+  function removeTask(id){
+    const i = state.tasks.findIndex(t => t.id === id); if (i < 0) return;
+    const [t] = state.tasks.splice(i, 1);
+    undoState = { t, i, day: state.day }; $("toast").classList.remove("show");
+    save();
+    $("undoTxt").textContent = "Attività eliminata";
+    $("undo").hidden = false; clearTimeout(undoTimer);
+    undoTimer = setTimeout(() => { $("undo").hidden = true; undoState = null; }, 5000);
+  }
+  $("undoBtn").onclick = () => {
+    clearTimeout(undoTimer); $("undo").hidden = true;
+    if (!undoState || undoState.day !== state.day) { undoState = null; return; }
+    state.tasks.splice(Math.min(undoState.i, state.tasks.length), 0, undoState.t);
+    undoState = null; save(); toast("Attività ripristinata");
+  };
+
+  $("list").addEventListener("click", e => {
+    if (suppressClick) { e.preventDefault(); return; }
+    const b = e.target.closest("[data-act]"); if (!b) return;
+    const id = b.closest(".task").dataset.id, t = state.tasks.find(x => x.id === id); if (!t) return;
+    if (b.dataset.act === "toggle") { t.done = !t.done; save(); if (t.done) toast("Fatto ✓"); }
+    else openSheet(t);
+  });
+
+  /* ---------- Foglio ---------- */
+  function setPrio(v){ state.prio = v; [...$("fPrio").children].forEach(b => b.setAttribute("aria-pressed", b.dataset.v === v)); }
+  $("fPrio").onclick = e => { const b = e.target.closest("button"); if (b) setPrio(b.dataset.v); };
+  /* ---------- Foto ---------- */
+  let photoDraft = [], uploading = 0;
+  const CAM = `<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-2.5h6L17 8h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>`;
+  function renderThumbs(){
+    const wrap = $("fPhotosWrap");
+    if (!assetsNs && !photoDraft.length) { wrap.hidden = true; return; }
+    wrap.hidden = false;
+    let html = photoDraft.map((id, i) => `<div class="thumb"><img data-pid="${esc(id)}" src="${esc(srcOf(id))}" alt="Foto ${i+1}"><button type="button" class="open" data-view="${esc(id)}" aria-label="Apri foto ${i+1}"></button><button type="button" class="rm" data-rm="${i}" aria-label="Togli foto ${i+1}"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>`).join("");
+    for (let i = 0; i < uploading; i++) html += `<div class="thumb busy">Carico…</div>`;
+    if (assetsNs) html += `<label class="thumb add" for="fPhoto">${CAM}<span>Aggiungi</span></label>`;
+    $("fThumbs").innerHTML = html;
+    photoDraft.forEach(loadPhoto);
+  }
+  async function shrink(file){
+    try {
+      const url = URL.createObjectURL(file);
+      const img = new Image();
+      await new Promise((res, rej) => { img.onload = res; img.onerror = rej; img.src = url; });
+      const r = Math.min(1, 1600 / Math.max(img.naturalWidth, img.naturalHeight));
+      const c = document.createElement("canvas");
+      c.width = Math.max(1, Math.round(img.naturalWidth * r)); c.height = Math.max(1, Math.round(img.naturalHeight * r));
+      c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+      URL.revokeObjectURL(url);
+      const b = await new Promise(res => c.toBlob(res, "image/jpeg", 0.82));
+      return b || file;
+    } catch { return file; }
+  }
+  const PHOTO_ERR = { too_large: "La foto è troppo grande (max 20 MB).", unsupported_type: "Formato non supportato: usa JPG, PNG o WebP.", quota_or_state: "Spazio per le foto esaurito.", rate_limited: "Troppi caricamenti di fila, riprova tra poco." };
+  $("fPhoto").addEventListener("change", async e => {
+    const files = [...e.target.files]; e.target.value = "";
+    if (!assetsNs || !files.length) return;
+    $("fPhotoNote").textContent = "";
+    for (const f of files) {
+      uploading++; renderThumbs();
+      try {
+        const blob = await shrink(f);
+        const type = ["image/jpeg","image/png","image/webp","image/gif"].includes(blob.type) ? blob.type : "image/jpeg";
+        const r = await assetsNs.upload(blob, { type });
+        photoUrl[r.id] = r.url; photoDraft.push(r.id);
+      } catch (err) {
+        $("fPhotoNote").textContent = PHOTO_ERR[err?.code] || "Foto non salvata: memoria piena o non disponibile.";
+      } finally { uploading--; renderThumbs(); }
+    }
+  });
+  $("fThumbs").addEventListener("click", e => {
+    const rm = e.target.closest("[data-rm]");
+    if (rm) { photoDraft.splice(+rm.dataset.rm, 1); renderThumbs(); return; }
+    const v = e.target.closest("[data-view]");
+    if (v) { const id = v.dataset.view; $("viewerImg").src = srcOf(id); $("viewer").hidden = false; loadPhoto(id).then(u => { if (u && !$("viewer").hidden) $("viewerImg").src = u; }); }
+  });
+  $("viewerClose").onclick = () => { $("viewer").hidden = true; $("viewerImg").removeAttribute("src"); };
+  $("viewer").addEventListener("click", e => { if (e.target.id === "viewer") $("viewerClose").onclick(); });
+
+  function openSheet(t){
+    state.editing = t || null;
+    $("sheetTitle").textContent = t ? "Modifica attività" : "Nuova attività";
+    $("fTitle").value = t?.title || "";
+    $("fTime").value = t?.time || "";
+    $("fCat").value = t?.cat || "Personale";
+    photoDraft = (t?.photos || []).slice(); uploading = 0; $("fPhotoNote").textContent = ""; renderThumbs();
+    setPrio(t?.prio || "media");
+    $("delBtn").hidden = !t; $("confirmDel").hidden = true;
+    $("scrim").classList.add("open"); $("sheet").classList.add("open");
+    setTimeout(() => { if (!t) $("fTitle").focus(); }, 260);
+  }
+  function closeSheet(){ $("scrim").classList.remove("open"); $("sheet").classList.remove("open"); state.editing = null; document.activeElement?.blur(); }
+  $("fab").onclick = () => openSheet();
+  $("cancel").onclick = closeSheet; $("scrim").onclick = () => { if ($("apSheet").classList.contains("open")) { closeAppt(); return; } closeSheet(); $("calSheet").classList.remove("open"); };
+  $("form").addEventListener("submit", e => {
+    e.preventDefault();
+    const title = $("fTitle").value.trim(); if (!title) return;
+    if (uploading) { $("fPhotoNote").textContent = "Attendi il caricamento della foto, poi salva."; return; }
+    const data = { title, time: $("fTime").value || "", prio: state.prio, cat: $("fCat").value, photos: photoDraft.slice() };
+    if (state.editing) Object.assign(state.editing, data);
+    else state.tasks.push({ id: uid(), done: false, ...data });
+    const wasNew = !state.editing; closeSheet(); save(); toast(wasNew ? "Attività aggiunta" : "Modifiche salvate");
+  });
+  $("delBtn").onclick = () => { $("delBtn").hidden = true; $("confirmDel").hidden = false; };
+  $("delNo").onclick = () => { $("delBtn").hidden = false; $("confirmDel").hidden = true; };
+  $("delYes").onclick = () => { const id = state.editing?.id; state.tasks = state.tasks.filter(t => t.id !== id); closeSheet(); save(); toast("Attività eliminata"); };
+
+  /* ---------- Esempio ---------- */
+  function loadSample(){
+    const s = [
+      ["Revisione mail e agenda","08:30",30,"media","Lavoro"],
+      ["Riunione di team","10:00",60,"alta","Lavoro"],
+      ["Pranzo e passeggiata","13:00",60,"bassa","Salute"],
+      ["Preparare la presentazione","14:30",120,"alta","Lavoro"],
+      ["Palestra","18:30",60,"media","Salute"],
+      ["Fare la spesa","",30,"media","Commissioni"],
+      ["Chiamare la mamma","",15,"bassa","Personale"]
+    ];
+    state.tasks = s.map(([title,time,dur,prio,cat]) => ({ id: uid(), title: title, time, dur, prio, cat, done: false }));
+    save(); toast("Esempio caricato: modificalo come vuoi");
+  }
+
+  /* ---------- Navigazione giorni ---------- */
+  const go = k => { state.day = k; subscribe(); };
+
+  /* ---------- Calendario del mese ---------- */
+  let calMonth = null, calData = {}, calSel = null;
+  async function loadCalData(){
+    const out = {};
+    try {
+      if (store) {
+        const snap = await store.col.get();
+        snap.docs.forEach(d => { if (/^\d{4}-\d{2}-\d{2}$/.test(d.id)) out[d.id] = d.data(); });
+      } else {
+        for (let i = 0; i < localStorage.length; i++) {
+          const k = localStorage.key(i); const m = /^giornata:(\d{4}-\d{2}-\d{2})$/.exec(k || "");
+          if (m) out[m[1]] = local.get(m[1]);
+        }
+      }
+    } catch {}
+    out[state.day] = { tasks: state.tasks, appts: state.appts };
+    calData = out;
+  }
+  function renderCal(){
+    const [y, m] = calMonth;
+    const first = new Date(y, m, 1);
+    $("calTitle").textContent = first.toLocaleDateString("it-IT", { month: "long", year: "numeric" });
+    const start = new Date(y, m, 1 - ((first.getDay() + 6) % 7));
+    const today = keyOf(new Date());
+    let html = ["Lun","Mar","Mer","Gio","Ven","Sab","Dom"].map(d => `<div class="wd">${d}</div>`).join("");
+    for (let i = 0; i < 42; i++) {
+      const d = new Date(start); d.setDate(start.getDate() + i);
+      const k = keyOf(d), out = d.getMonth() !== m;
+      if (i >= 35 && out && d.getDate() < 8 && i % 7 === 0) break;
+      const tasks = (calData[k]?.tasks || []).filter(t => !t.movedTo);
+      const open = tasks.filter(t => !t.done).length;
+      const sp = [...new Set(sportEvents.filter(e => e.date === k).map(e => e.sport))];
+      const nAp = (calData[k]?.appts || []).length;
+      let dots = "";
+      if (nAp) dots += `<i class="dot appt"></i>`;
+      if (tasks.length) dots += `<i class="dot ${open ? "todo" : "done"}"></i>`;
+      sp.forEach(x => dots += `<i class="dot ${esc(x)}"></i>`);
+      const cls = ["cday", out && "out", k === today && "today", k === calSel && "sel"].filter(Boolean).join(" ");
+      const label = d.toLocaleDateString("it-IT",{weekday:"long",day:"numeric",month:"long"}) + (tasks.length ? `, ${open} da fare su ${tasks.length}` : "") + (nAp ? `, ${nAp} appuntamenti` : "") + (sp.length ? ", eventi sport" : "");
+      html += `<button type="button" class="${cls}" data-k="${k}" aria-label="${esc(label)}"><span>${d.getDate()}</span><span class="dots">${dots}</span>${open ? `<span class="cnt">${open}</span>` : ""}</button>`;
+    }
+    $("calGrid").innerHTML = html;
+  }
+  async function openCal(){
+    const d = fromKey(state.day); calMonth = [d.getFullYear(), d.getMonth()]; calSel = state.day;
+    $("calNote").textContent = "Caricamento…";
+    renderCal();
+    $("scrim").classList.add("open"); $("calSheet").classList.add("open");
+    renderDayPanel();
+    await loadCalData(); $("calNote").textContent = "Tocca un giorno per vederlo o aggiungere un appuntamento"; renderCal(); renderDayPanel();
+  }
+  function closeCal(){ $("calSheet").classList.remove("open"); $("scrim").classList.remove("open"); }
+  $("calFab").onclick = openCal;
+  $("calClose").onclick = closeCal;
+  $("calX").onclick = closeCal;
+  $("calPrev").onclick = () => { calMonth = calMonth[1] === 0 ? [calMonth[0]-1, 11] : [calMonth[0], calMonth[1]-1]; renderCal(); };
+  $("calNext").onclick = () => { calMonth = calMonth[1] === 11 ? [calMonth[0]+1, 0] : [calMonth[0], calMonth[1]+1]; renderCal(); };
+  $("calGrid").onclick = e => { const b = e.target.closest(".cday"); if (!b) return; calSel = b.dataset.k; renderCal(); renderDayPanel(); };
+  function renderDayPanel(){
+    const k = calSel; if (!k) { $("dayPanel").hidden = true; return; }
+    $("dayPanel").hidden = false;
+    $("dpTitle").textContent = fromKey(k).toLocaleDateString("it-IT",{weekday:"long",day:"numeric",month:"long"});
+    const appts = (calData[k]?.appts || []).slice().sort((a,b) => apSortKey(a).localeCompare(apSortKey(b)));
+    const tasks = (calData[k]?.tasks || []).filter(t => !t.movedTo);
+    const open = tasks.filter(t => !t.done).length;
+    const sp = sportEvents.filter(e => e.date === k).sort((a,b) => (a.time||"").localeCompare(b.time||""));
+    let html = appts.map(a => `<button type="button" class="dp-item" data-appt="${a.id}"><span class="badge appt">Appunt.</span><span class="rt">${esc(a.title)}${a.place ? `<span class="rd" style="display:block;font-weight:400">${esc(a.place)}</span>` : ""}</span><span class="time">${apTimeHTML(a)}</span></button>`).join("");
+    if (tasks.length) html += `<div class="dp-item"><span class="badge appt" style="background:transparent;color:var(--ink);border:1px solid var(--ink)">Attività</span><span class="rt">${open ? `${open} da fare su ${tasks.length}` : `Tutte fatte (${tasks.length})`}</span><span></span></div>`;
+    html += sp.map(e => `<div class="dp-item"><span class="badge ${esc(e.sport)}">${SPORT_LBL[e.sport] || esc(e.sport)}</span><span class="rt">${esc(e.title)}</span><span class="time">${esc(e.time||"")}</span></div>`).join("");
+    $("dpList").innerHTML = html || `<div class="dp-empty">Niente in programma.</div>`;
+  }
+  $("dpList").onclick = e => { const b = e.target.closest("[data-appt]"); if (!b) return; const a = (calData[calSel]?.appts || []).find(x => x.id === b.dataset.appt); if (a) openAppt(calSel, a); };
+  $("dpAdd").onclick = () => openAppt(calSel || state.day, null);
+  $("dpOpen").onclick = () => { const k = calSel; closeCal(); if (k) go(k); };
+  $("prev").onclick = () => go(addDays(state.day, -1));
+  $("next").onclick = () => go(addDays(state.day, 1));
+  $("goToday").onclick = () => go(keyOf(new Date()));
+
+  let tt; function toast(m){ const el = $("toast"); el.textContent = m; el.classList.add("show"); clearTimeout(tt); tt = setTimeout(() => el.classList.remove("show"), 1800); }
+  function setStatus(m){ $("status").textContent = m; }
+
+  /* ---------- Backup: salva e ripristina ---------- */
+  const blobToDataURL = b => new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result); r.onerror = rej; r.readAsDataURL(b); });
+  $("bkExport").onclick = async () => {
+    $("bkNote").textContent = "Preparo il backup…";
+    try {
+      const days = {}, ids = new Set();
+      for (let i = 0; i < localStorage.length; i++) {
+        const m = /^giornata:(\d{4}-\d{2}-\d{2})$/.exec(localStorage.key(i) || "");
+        if (!m) continue;
+        const d = local.get(m[1]); if (!d) continue;
+        days[m[1]] = d; (d.tasks || []).forEach(t => (t.photos || []).forEach(id => ids.add(id)));
+      }
+      const photos = {};
+      for (const id of ids) { try { const b = await idb.get(id); if (b) photos[id] = await blobToDataURL(b); } catch {} }
+      const data = { app: "La mia Giornata", version: 1, createdAt: new Date().toISOString(), days, photos };
+      const name = `giornata-backup-${keyOf(new Date())}.json`;
+      const file = new File([JSON.stringify(data)], name, { type: "application/json" });
+      if (navigator.canShare?.({ files: [file] })) {
+        try { await navigator.share({ files: [file], title: "Backup Giornata" }); $("bkNote").textContent = "Backup pronto: salvalo in File o in iCloud Drive."; return; }
+        catch (e) { if (e?.name === "AbortError") { $("bkNote").textContent = ""; return; } }
+      }
+      const a = document.createElement("a"); a.href = URL.createObjectURL(file); a.download = name;
+      document.body.appendChild(a); a.click(); a.remove();
+      $("bkNote").textContent = "Backup scaricato.";
+    } catch { $("bkNote").textContent = "Non sono riuscito a creare il backup."; }
+  };
+  $("bkFile").addEventListener("change", async e => {
+    const f = e.target.files[0]; e.target.value = ""; if (!f) return;
+    try {
+      const data = JSON.parse(await f.text());
+      if (!data || typeof data.days !== "object") throw 0;
+      let n = 0;
+      for (const [k, v] of Object.entries(data.days)) if (/^\d{4}-\d{2}-\d{2}$/.test(k) && v) { local.set(k, v); n++; }
+      for (const [id, url] of Object.entries(data.photos || {})) { try { const b = await (await fetch(url)).blob(); await idb.put(id, b); } catch {} }
+      $("bkNote").textContent = `Ripristinati ${n} giorni.`;
+      subscribe(); await loadCalData(); renderCal(); renderDayPanel();
+    } catch { $("bkNote").textContent = "Questo file non è un backup di Giornata."; }
+  });
+
+  // Aggiorna "ora" ogni minuto, e torna a oggi se la pagina resta aperta dopo mezzanotte
+  let lastToday = keyOf(new Date());
+  setInterval(() => { const k = keyOf(new Date()); if (k !== lastToday) { if (state.day === lastToday) go(k); lastToday = k; } else render(); }, 60000);
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) render(); });
+  try { navigator.wakeLock; } catch {}
+
+  render();
+  initStore();
+  if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));
+})();
+</script>
+</body>
+</html>
