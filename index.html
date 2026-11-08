@@ -35,8 +35,9 @@ img{max-width:100%}
 
 *{box-sizing:border-box}
 html,body,button,a,label,input,select,textarea{touch-action:manipulation}
-html,body{background:var(--bg);color:var(--ink)}
-.wrap{overflow-x:clip}
+html,body{background:var(--bg);color:var(--ink);height:100%;overflow:hidden;overscroll-behavior:none}
+/* La pagina non scorre: scorre solo questo contenitore, così i pulsanti in basso restano fermi */
+.scroller{position:fixed;inset:0;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior-y:contain;padding-top:env(safe-area-inset-top,0px)}
 body{font-family:var(--f-body);font-size:16px;line-height:1.45;-webkit-tap-highlight-color:transparent}
 .wrap{max-width:560px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:12px 120px;display:flex;flex-direction:column;gap:18px}
 button{font:inherit;color:inherit;cursor:pointer}
@@ -269,6 +270,7 @@ input[type=time]::-webkit-calendar-picker-indicator,input[type=date]::-webkit-ca
 </head>
 <body>
 
+<div class="scroller" id="scroller">
 <div class="wrap">
   <header class="top">
     <div class="datehead">
@@ -308,6 +310,7 @@ input[type=time]::-webkit-calendar-picker-indicator,input[type=date]::-webkit-ca
 
   <section class="sport" id="sport" hidden aria-label="Promemoria sport"></section>
   <div class="status" id="status">Caricamento…</div>
+</div>
 </div>
 
 <nav class="dock" aria-label="Azioni">
@@ -1086,7 +1089,7 @@ input[type=time]::-webkit-calendar-picker-indicator,input[type=date]::-webkit-ca
     };
     vv.addEventListener("resize", fit); vv.addEventListener("scroll", fit); fit();
   })();
-  $("noteText").addEventListener("focus", () => setTimeout(() => { window.scrollTo(0, window.scrollY); }, 50));
+  $("noteText").addEventListener("focus", () => setTimeout(() => { window.scrollTo(0, 0); }, 50));
 
   /* ---------- Trascina verso il basso per chiudere i pannelli ---------- */
   [["sheet", () => closeSheet()], ["calSheet", () => closeCal()], ["apSheet", () => closeAppt()], ["notesSheet", () => closeNotes()], ["noteSheet", () => closeNote()]].forEach(([id, close]) => {
