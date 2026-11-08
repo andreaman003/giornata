@@ -131,7 +131,7 @@ h1{font-family:var(--f-display);font-weight:800;font-size:clamp(28px,8vw,36px);l
 .fab{position:fixed;right:calc(max(16px,env(safe-area-inset-right,0px)) + 4px);bottom:calc(20px + env(safe-area-inset-bottom,0px));width:60px;height:60px;border-radius:20px;border:0;background:var(--ink);color:#111214;padding:0;display:grid;place-items:center;line-height:1;box-shadow:0 8px 24px rgba(0,0,0,.22);z-index:20}
 
 /* I tre pulsanti in basso: sempre nella stessa posizione */
-.dock{position:fixed;left:0;right:0;top:calc(100lvh - 80px - env(safe-area-inset-bottom,0px));bottom:auto;height:60px;z-index:20;display:flex;justify-content:space-between;align-items:center;padding:0 calc(max(16px,env(safe-area-inset-right,0px)) + 4px) 0 calc(max(16px,env(safe-area-inset-left,0px)) + 4px);pointer-events:none;transform:translateZ(0)}
+.dock{position:fixed;left:0;right:0;bottom:0;z-index:20;display:flex;justify-content:space-between;align-items:center;padding:0 calc(max(16px,env(safe-area-inset-right,0px)) + 4px) calc(20px + env(safe-area-inset-bottom,0px)) calc(max(16px,env(safe-area-inset-left,0px)) + 4px);pointer-events:none;transform:translateZ(0)}
 .dock .fab{position:static;transform:none;pointer-events:auto;flex:none}
 
 /* Note */
@@ -146,7 +146,7 @@ h1{font-family:var(--f-display);font-weight:800;font-size:clamp(28px,8vw,36px);l
 .note .nd{font-family:var(--f-mono);font-size:11px;color:var(--muted)}
 .notes-empty{text-align:center;padding:24px 12px;border:1.5px dashed var(--line);border-radius:16px;color:var(--muted);font-size:14px}
 #noteText{min-height:110px;height:calc(var(--vvh, 100vh) * .92 - 210px);font-size:16px;line-height:1.5;resize:none}
-html.kb .sheet{top:var(--vvb,100lvh);max-height:calc(var(--vvh, 100vh) - 8px);padding-bottom:12px;transition:transform .25s ease,top .15s ease}
+html.kb .sheet{bottom:var(--kb,0px);max-height:calc(var(--vvh, 100vh) - 8px);padding-bottom:12px;transition:transform .25s ease,bottom .15s ease}
 html.kb #noteText{height:calc(var(--vvh, 100vh) - 190px)}
 
 /* Calendario del mese */
@@ -220,19 +220,19 @@ textarea{font:inherit;font-size:16px;color:var(--ink);background:var(--field);bo
 .pnote{font-size:12px;color:var(--muted);min-height:0}
 .pnote:empty{display:none}
 .meta .pc{display:inline-flex;align-items:center;gap:4px;color:var(--ink);font-weight:700}
-.viewer{position:fixed;top:0;left:0;right:0;height:100lvh;z-index:60;background:rgba(0,0,0,.92);display:flex;align-items:center;justify-content:center;padding:calc(16px + env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) calc(16px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+.viewer{position:fixed;inset:0;z-index:60;background:rgba(0,0,0,.92);display:flex;align-items:center;justify-content:center;padding:calc(16px + env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) calc(16px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
 .viewer[hidden]{display:none}
 .viewer img{max-width:100%;max-height:100%;object-fit:contain;border-radius:12px}
 .vclose{position:absolute;top:calc(14px + env(safe-area-inset-top,0px));right:calc(max(16px,env(safe-area-inset-right,0px)));width:44px;height:44px;border-radius:14px;border:0;background:var(--ink);color:#111214;display:grid;place-items:center}
 
 /* Foglio di modifica */
-.scrim{position:fixed;top:0;left:0;right:0;height:100lvh;background:rgba(10,20,18,.45);z-index:30;opacity:0;pointer-events:none;transition:opacity .2s}
+.scrim{position:fixed;inset:0;background:rgba(10,20,18,.45);z-index:30;opacity:0;pointer-events:none;transition:opacity .2s}
 .scrim.open{opacity:1;pointer-events:auto}
-.sheet{position:fixed;left:0;right:0;top:100lvh;bottom:auto;z-index:31;background:var(--surface);border-radius:22px 22px 0 0;padding:10px max(16px,env(safe-area-inset-right,0px)) calc(18px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));transform:translateY(2%);transition:transform .25s ease;max-height:90lvh;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain}
+.sheet{position:fixed;left:0;right:0;bottom:0;z-index:31;background:var(--surface);border-radius:22px 22px 0 0;padding:10px max(16px,env(safe-area-inset-right,0px)) calc(18px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));transform:translateY(105%);transition:transform .25s ease;max-height:92%;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain}
 .sheet{box-shadow:0 300px 0 0 var(--surface)}
 .sheet::before{content:"";display:block;width:40px;height:5px;border-radius:3px;background:var(--line);margin:0 auto 6px}
 .sheet.dragging{transition:none}
-.sheet.open{transform:translateY(-100%)}
+.sheet.open{transform:none}
 .sheet form,.sheet>div{width:100%;max-width:560px;margin:0 auto;min-width:0;display:flex;flex-direction:column;gap:14px}
 .grab{width:40px;height:5px;border-radius:3px;background:var(--line);margin:0 auto 4px}
 .sheet h3{margin:0;font-family:var(--f-display);font-size:22px}
@@ -260,10 +260,10 @@ input[type=time]::-webkit-calendar-picker-indicator,input[type=date]::-webkit-ca
 .swipe .task{touch-action:pan-y;transition:transform .2s ease;will-change:transform}
 .swipe .task.dragging{transition:none}
 .swipe.gone{transition:height .22s ease,opacity .22s ease;opacity:0}
-.undo{position:fixed;left:50%;top:calc(100lvh - 142px - env(safe-area-inset-bottom,0px));bottom:auto;transform:translateX(-50%);display:flex;gap:14px;align-items:center;background:var(--surface);color:var(--ink);border:1px solid var(--line);padding:8px 8px 8px 16px;border-radius:14px;font-size:14px;font-weight:700;z-index:41;box-shadow:0 8px 24px rgba(0,0,0,.25);white-space:nowrap}
+.undo{position:fixed;left:50%;bottom:calc(92px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);display:flex;gap:14px;align-items:center;background:var(--surface);color:var(--ink);border:1px solid var(--line);padding:8px 8px 8px 16px;border-radius:14px;font-size:14px;font-weight:700;z-index:41;box-shadow:0 8px 24px rgba(0,0,0,.25);white-space:nowrap}
 .undo[hidden]{display:none}
 .undo button{height:34px;padding:0 14px;border-radius:10px;border:0;background:var(--ink);color:#111214;font-weight:700}
-.toast{position:fixed;left:50%;top:calc(100lvh - 136px - env(safe-area-inset-bottom,0px));bottom:auto;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#111214;padding:10px 16px;border-radius:12px;font-size:14px;font-weight:700;opacity:0;transition:.2s;z-index:40;pointer-events:none;white-space:nowrap}
+.toast{position:fixed;left:50%;bottom:calc(92px + env(safe-area-inset-bottom,0px));transform:translateX(-50%) translateY(20px);background:var(--ink);color:#111214;padding:10px 16px;border-radius:12px;font-size:14px;font-weight:700;opacity:0;transition:.2s;z-index:40;pointer-events:none;white-space:nowrap}
 .toast.show{opacity:1;transform:translateX(-50%)}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
@@ -1083,12 +1083,19 @@ input[type=time]::-webkit-calendar-picker-indicator,input[type=date]::-webkit-ca
       const kb = Math.max(0, Math.round(window.innerHeight - (vv.offsetTop + vv.height)));
       root.style.setProperty("--vvh", Math.round(vv.height) + "px");
       root.style.setProperty("--kb", kb + "px");
-      root.style.setProperty("--vvb", Math.round(vv.offsetTop + vv.height) + "px");
       root.classList.toggle("kb", kb > 80);
     };
     vv.addEventListener("resize", fit); vv.addEventListener("scroll", fit); fit();
   })();
   $("noteText").addEventListener("focus", () => setTimeout(() => { window.scrollTo(0, window.scrollY); }, 50));
+
+  /* ---------- Colore della barra di sistema in fondo: nero quando un pannello è aperto ---------- */
+  (() => {
+    let meta = document.querySelector('meta[name="theme-color"]');
+    if (!meta) { meta = document.createElement("meta"); meta.name = "theme-color"; document.head.appendChild(meta); }
+    const sync = () => { meta.setAttribute("content", $("scrim").classList.contains("open") ? "#111214" : "#B9BDC3"); };
+    new MutationObserver(sync).observe($("scrim"), { attributes: true, attributeFilter: ["class"] }); sync();
+  })();
 
   /* ---------- Trascina verso il basso per chiudere i pannelli ---------- */
   [["sheet", () => closeSheet()], ["calSheet", () => closeCal()], ["apSheet", () => closeAppt()], ["notesSheet", () => closeNotes()], ["noteSheet", () => closeNote()]].forEach(([id, close]) => {
@@ -1108,7 +1115,7 @@ input[type=time]::-webkit-calendar-picker-indicator,input[type=date]::-webkit-ca
       }
       e.preventDefault();
       d.dy = Math.max(0, dy);
-      el.style.transform = `translateY(calc(-100% + ${d.dy}px))`;
+      el.style.transform = `translateY(${d.dy}px)`;
     }, { passive: false });
     const end = () => {
       if (!d) return; const g = d; d = null;
@@ -1116,7 +1123,7 @@ input[type=time]::-webkit-calendar-picker-indicator,input[type=date]::-webkit-ca
       el.classList.remove("dragging");
       const fast = g.dy / Math.max(1, Date.now() - g.t) > 0.6;
       if (g.dy > Math.min(140, el.offsetHeight * 0.25) || (fast && g.dy > 40)) {
-        el.style.transform = "translateY(2%)";
+        el.style.transform = "translateY(105%)";
         close();
         setTimeout(() => { el.style.transform = ""; }, 280);
       } else el.style.transform = "";
