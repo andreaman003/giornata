@@ -342,7 +342,6 @@ input[type=time]::-webkit-calendar-picker-indicator,input[type=date]::-webkit-ca
       <input type="file" id="bkFile" accept="application/json,.json" hidden>
       <div class="pnote" id="bkNote"></div>
     </div>
-    <button type="button" class="btn" id="calClose">Chiudi</button>
   </div>
 </div>
 <div class="sheet" id="apSheet" role="dialog" aria-modal="true" aria-labelledby="apTitle" style="z-index:33">
@@ -971,7 +970,6 @@ input[type=time]::-webkit-calendar-picker-indicator,input[type=date]::-webkit-ca
     el.addEventListener("touchcancel", end);
   });
   $("calFab").onclick = openCal;
-  $("calClose").onclick = closeCal;
   $("calX").onclick = closeCal;
   $("calPrev").onclick = () => { calMonth = calMonth[1] === 0 ? [calMonth[0]-1, 11] : [calMonth[0], calMonth[1]-1]; renderCal(); };
   $("calNext").onclick = () => { calMonth = calMonth[1] === 11 ? [calMonth[0]+1, 0] : [calMonth[0], calMonth[1]+1]; renderCal(); };
