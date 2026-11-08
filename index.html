@@ -134,6 +134,10 @@ h1{font-family:var(--f-display);font-weight:800;font-size:clamp(28px,8vw,36px);l
 
 /* Note */
 .notelist{display:flex;flex-direction:column;gap:8px}
+.swipe .note{position:relative;touch-action:pan-y;transition:transform .2s ease;will-change:transform}
+.swipe .note.dragging{transition:none}
+.nswipe{border-radius:14px}
+.nswipe .del-bg{border-radius:14px}
 .note{display:flex;flex-direction:column;gap:3px;text-align:left;width:100%;background:var(--field);border:1px solid var(--line);border-radius:14px;padding:12px 14px;color:var(--ink);font:inherit}
 .note .nt{font-weight:700;font-size:16px;overflow-wrap:anywhere}
 .note .np{font-size:14px;color:var(--muted);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere}
@@ -790,14 +794,21 @@ input[type=time]::-webkit-calendar-picker-indicator,input[type=date]::-webkit-ca
   function removeTask(id){
     const i = state.tasks.findIndex(t => t.id === id); if (i < 0) return;
     const [t] = state.tasks.splice(i, 1);
-    undoState = { t, i, day: state.day }; $("toast").classList.remove("show");
+    undoState = { t, i, day: state.day }; undoAction = null; $("toast").classList.remove("show");
     save();
     $("undoTxt").textContent = "Attività eliminata";
     $("undo").hidden = false; clearTimeout(undoTimer);
     undoTimer = setTimeout(() => { $("undo").hidden = true; undoState = null; }, 5000);
   }
+  let undoAction = null;
+  function showUndo(text, fn){
+    undoState = null; undoAction = fn; $("toast").classList.remove("show");
+    $("undoTxt").textContent = text; $("undo").hidden = false; clearTimeout(undoTimer);
+    undoTimer = setTimeout(() => { $("undo").hidden = true; undoAction = null; }, 5000);
+  }
   $("undoBtn").onclick = () => {
     clearTimeout(undoTimer); $("undo").hidden = true;
+    if (undoAction) { const f = undoAction; undoAction = null; f(); return; }
     if (!undoState || undoState.day !== state.day) { undoState = null; return; }
     state.tasks.splice(Math.min(undoState.i, state.tasks.length), 0, undoState.t);
     undoState = null; save(); toast("Attività ripristinata");
@@ -985,7 +996,7 @@ input[type=time]::-webkit-calendar-picker-indicator,input[type=date]::-webkit-ca
       const { title, rest } = noteParts(n.text || "");
       const d = new Date(n.updatedAt || Date.now());
       const when = keyOf(d) === keyOf(new Date()) ? "oggi " + d.toLocaleTimeString("it-IT",{hour:"2-digit",minute:"2-digit"}) : d.toLocaleDateString("it-IT",{day:"numeric",month:"short",year: d.getFullYear() === new Date().getFullYear() ? undefined : "numeric"});
-      return `<button type="button" class="note" data-note="${esc(n.id)}"><span class="nt">${esc(title)}</span>${rest ? `<span class="np">${esc(rest)}</span>` : ""}<span class="nd">${esc(when)}</span></button>`;
+      return `<div class="swipe nswipe" data-id="${esc(n.id)}"><div class="del-bg" aria-hidden="true">Elimina</div><button type="button" class="note" data-note="${esc(n.id)}"><span class="nt">${esc(title)}</span>${rest ? `<span class="np">${esc(rest)}</span>` : ""}<span class="nd">${esc(when)}</span></button></div>`;
     }).join("") : `<div class="notes-empty">Nessuna nota. Tocca "+ Nuova nota" per scriverne una.</div>`;
   }
   async function openNotes(){
@@ -1006,7 +1017,44 @@ input[type=time]::-webkit-calendar-picker-indicator,input[type=date]::-webkit-ca
   $("notesFab").onclick = openNotes;
   $("notesX").onclick = closeNotes;
   $("noteNew").onclick = () => openNote(null);
-  $("noteList").onclick = e => { const b = e.target.closest("[data-note]"); if (!b) return; const n = notes.find(x => x.id === b.dataset.note); if (n) openNote(n); };
+  /* scorri una nota verso sinistra per eliminarla */
+  let nsw = null, nSuppress = false;
+  const NL = $("noteList");
+  NL.addEventListener("pointerdown", e => {
+    const card = e.target.closest(".nswipe .note"); if (!card || (e.pointerType === "mouse" && e.button !== 0)) return;
+    nsw = { card, wrap: card.parentElement, x: e.clientX, y: e.clientY, dx: 0, active: false, id: e.pointerId };
+  });
+  NL.addEventListener("pointermove", e => {
+    if (!nsw || e.pointerId !== nsw.id) return;
+    const dx = e.clientX - nsw.x, dy = e.clientY - nsw.y;
+    if (!nsw.active) {
+      if (Math.abs(dy) > 10 && Math.abs(dy) > Math.abs(dx)) { nsw = null; return; }
+      if (dx < -10 && Math.abs(dx) > Math.abs(dy)) { nsw.active = true; nsw.wrap.classList.add("on"); nsw.card.classList.add("dragging"); try { nsw.card.setPointerCapture(e.pointerId); } catch {} }
+      else return;
+    }
+    nsw.dx = Math.min(0, dx);
+    nsw.card.style.transform = `translateX(${nsw.dx}px)`;
+  });
+  NL.addEventListener("pointerup", e => {
+    if (!nsw || e.pointerId !== nsw.id) return;
+    const g = nsw; nsw = null; if (!g.active) return;
+    nSuppress = true; setTimeout(() => nSuppress = false, 60);
+    g.card.classList.remove("dragging");
+    const w = g.card.offsetWidth;
+    if (g.dx < -Math.min(120, w * 0.35)) {
+      g.card.style.transform = `translateX(${-w - 20}px)`;
+      const h = g.wrap.offsetHeight; g.wrap.style.height = h + "px";
+      requestAnimationFrame(() => { g.wrap.classList.add("gone"); g.wrap.style.height = "0px"; });
+      setTimeout(() => {
+        const i = notes.findIndex(n => n.id === g.wrap.dataset.id); if (i < 0) return;
+        const [n] = notes.splice(i, 1); saveNotes(); renderNotes();
+        showUndo("Nota eliminata", () => { notes.push(n); saveNotes(); renderNotes(); toast("Nota ripristinata"); });
+      }, 230);
+    } else { g.card.style.transform = ""; setTimeout(() => g.wrap.classList.remove("on"), 220); }
+  });
+  NL.addEventListener("pointercancel", () => { if (nsw && nsw.active) { nsw.card.classList.remove("dragging"); nsw.card.style.transform = ""; } nsw = null; });
+
+  $("noteList").onclick = e => { if (nSuppress) { e.preventDefault(); return; } const b = e.target.closest("[data-note]"); if (!b) return; const n = notes.find(x => x.id === b.dataset.note); if (n) openNote(n); };
   $("noteX").onclick = closeNote; $("noteCancel").onclick = closeNote;
   $("noteForm").addEventListener("submit", e => {
     e.preventDefault();
