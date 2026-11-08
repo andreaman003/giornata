@@ -139,7 +139,9 @@ h1{font-family:var(--f-display);font-weight:800;font-size:clamp(28px,8vw,36px);l
 .note .np{font-size:14px;color:var(--muted);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere}
 .note .nd{font-family:var(--f-mono);font-size:11px;color:var(--muted)}
 .notes-empty{text-align:center;padding:24px 12px;border:1.5px dashed var(--line);border-radius:16px;color:var(--muted);font-size:14px}
-#noteText{min-height:42vh;font-size:16px;line-height:1.5;resize:none}
+#noteText{min-height:110px;height:calc(var(--vvh, 100vh) * .92 - 210px);font-size:16px;line-height:1.5;resize:none}
+html.kb .sheet{bottom:var(--kb,0px);max-height:calc(var(--vvh, 100vh) - 8px);padding-bottom:12px;transition:transform .25s ease,bottom .15s ease}
+html.kb #noteText{height:calc(var(--vvh, 100vh) - 190px)}
 
 /* Calendario del mese */
 .calhead{display:flex;align-items:center;justify-content:space-between;gap:8px}
@@ -1019,6 +1021,20 @@ input[type=time]::-webkit-calendar-picker-indicator,input[type=date]::-webkit-ca
   $("noteDel").onclick = () => { $("noteDel").hidden = true; $("noteConfirm").hidden = false; };
   $("noteDelNo").onclick = () => { $("noteDel").hidden = false; $("noteConfirm").hidden = true; };
   $("noteDelYes").onclick = () => { const id = noteEditId; notes = notes.filter(n => n.id !== id); saveNotes(); renderNotes(); closeNote(); toast("Nota eliminata"); };
+
+  /* ---------- Tastiera aperta: i pannelli restano sopra la tastiera ---------- */
+  (() => {
+    const vv = window.visualViewport; if (!vv) return;
+    const root = document.documentElement;
+    const fit = () => {
+      const kb = Math.max(0, Math.round(window.innerHeight - (vv.offsetTop + vv.height)));
+      root.style.setProperty("--vvh", Math.round(vv.height) + "px");
+      root.style.setProperty("--kb", kb + "px");
+      root.classList.toggle("kb", kb > 80);
+    };
+    vv.addEventListener("resize", fit); vv.addEventListener("scroll", fit); fit();
+  })();
+  $("noteText").addEventListener("focus", () => setTimeout(() => { window.scrollTo(0, window.scrollY); }, 50));
 
   /* ---------- Trascina verso il basso per chiudere i pannelli ---------- */
   [["sheet", () => closeSheet()], ["calSheet", () => closeCal()], ["apSheet", () => closeAppt()], ["notesSheet", () => closeNotes()], ["noteSheet", () => closeNote()]].forEach(([id, close]) => {
