@@ -44,7 +44,7 @@ button{font:inherit;color:inherit;cursor:pointer}
 /* Testata */
 .top{display:flex;align-items:center;justify-content:space-between;gap:8px;padding-top:6px}
 .daynav{display:flex;gap:6px}
-.iconbtn{width:40px;height:40px;border-radius:12px;border:1px solid var(--line);background:var(--surface);display:grid;place-items:center;font-size:18px}
+.iconbtn{width:40px;height:40px;border-radius:12px;border:1px solid var(--line);background:var(--surface);display:grid;place-items:center;padding:0;line-height:0;color:var(--ink)}
 .today-btn{height:40px;padding:0 14px;border-radius:12px;border:1px solid var(--line);background:var(--surface);font-weight:700;font-size:14px}
 .today-btn[hidden]{display:none}
 .datehead{min-width:0}
@@ -133,7 +133,7 @@ h1{font-family:var(--f-display);font-weight:800;font-size:clamp(28px,8vw,36px);l
 .calhead{display:flex;align-items:center;justify-content:space-between;gap:8px}
 .calhead h3{text-transform:capitalize}
 .calnav{display:flex;gap:6px}
-.calnav button:not(.xclose){width:40px;height:40px;border-radius:12px;border:1px solid var(--line);background:var(--field);color:var(--ink);font-size:18px}
+.calnav button:not(.xclose){width:40px;height:40px;border-radius:12px;border:1px solid var(--line);background:var(--field);color:var(--ink);display:grid;place-items:center;padding:0;line-height:0}
 .calgrid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
 .calgrid .wd{text-align:center;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);padding-bottom:4px}
 .cday{aspect-ratio:1/1.05;max-width:100%;border-radius:12px;border:1px solid transparent;background:var(--field);color:var(--ink);display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:6px 0 0;gap:4px;font-family:var(--f-mono);font-weight:600;font-size:15px;font-variant-numeric:tabular-nums}
@@ -254,9 +254,9 @@ input[type=time]::-webkit-calendar-picker-indicator,input[type=date]::-webkit-ca
       <h1 id="dateTitle">Oggi</h1>
     </div>
     <div class="daynav">
-      <button class="iconbtn" id="prev" aria-label="Giorno precedente">‹</button>
+      <button class="iconbtn" id="prev" aria-label="Giorno precedente"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button>
       <button class="today-btn" id="goToday" hidden>Oggi</button>
-      <button class="iconbtn" id="next" aria-label="Giorno successivo">›</button>
+      <button class="iconbtn" id="next" aria-label="Giorno successivo"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></button>
     </div>
   </header>
 
@@ -323,7 +323,7 @@ input[type=time]::-webkit-calendar-picker-indicator,input[type=date]::-webkit-ca
 <div class="sheet" id="calSheet" role="dialog" aria-modal="true" aria-labelledby="calTitle">
   <div style="max-width:560px;margin:0 auto;display:flex;flex-direction:column;gap:12px">
     <div class="calhead" style="padding-top:6px"><h3 id="calTitle">Mese</h3>
-      <div class="calnav"><button type="button" id="calPrev" aria-label="Mese precedente">‹</button><button type="button" id="calNext" aria-label="Mese successivo">›</button><button type="button" class="xclose" id="calX" aria-label="Chiudi calendario" style="margin-left:4px"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div></div>
+      <div class="calnav"><button type="button" id="calPrev" aria-label="Mese precedente"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button><button type="button" id="calNext" aria-label="Mese successivo"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></button><button type="button" class="xclose" id="calX" aria-label="Chiudi calendario" style="margin-left:4px"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div></div>
     <div class="calgrid" id="calGrid"></div>
     <div class="legend"><span><i class="dot appt"></i>appuntamento</span><span><i class="dot todo"></i>da fare</span><span><i class="dot done"></i>tutto fatto</span><span><i class="dot f1"></i>F1</span><span><i class="dot motogp"></i>MotoGP</span><span><i class="dot inter"></i>Inter</span></div>
     <div class="calnote" id="calNote"></div>
