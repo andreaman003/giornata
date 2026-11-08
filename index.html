@@ -74,7 +74,7 @@ h1{font-family:var(--f-display);font-weight:800;font-size:clamp(28px,8vw,36px);l
 .chips{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;margin-inline:-4px;padding:2px 4px}
 .chips::-webkit-scrollbar{display:none}
 .chip{flex:none;height:36px;padding:0 14px;border-radius:999px;border:1px solid var(--line);background:var(--surface);font-size:14px;font-weight:700;color:var(--muted)}
-.chip[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.chip[aria-pressed="true"]{background:var(--ink);color:#111214;border-color:var(--ink)}
 
 /* Lista */
 .group{display:flex;flex-direction:column;gap:8px}
@@ -107,7 +107,7 @@ h1{font-family:var(--f-display);font-weight:800;font-size:clamp(28px,8vw,36px);l
 .btn{height:44px;padding:0 18px;border-radius:12px;border:1px solid var(--line);background:var(--surface);font-weight:700}
 .btn.primary{background:var(--ink);color:#111214;border-color:var(--ink)}
 .sheet button[type=submit].btn{background:#3FB950;color:#0B1A0F;border-color:#3FB950}
-#cancel,#apCancel{background:#E5484D;color:#fff;border-color:#E5484D}
+#cancel,#apCancel,#noteCancel{background:#E5484D;color:#fff;border-color:#E5484D}
 .btn.danger{color:var(--high)}
 .carry{display:flex;gap:10px;align-items:center;justify-content:space-between;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:10px 12px;font-size:14px}
 .carry[hidden]{display:none}
@@ -130,6 +130,16 @@ h1{font-family:var(--f-display);font-weight:800;font-size:clamp(28px,8vw,36px);l
 .fab{position:fixed;right:calc(max(16px,env(safe-area-inset-right,0px)) + 4px);bottom:calc(20px + env(safe-area-inset-bottom,0px));width:60px;height:60px;border-radius:20px;border:0;background:var(--ink);color:#111214;padding:0;display:grid;place-items:center;line-height:1;box-shadow:0 8px 24px rgba(0,0,0,.22);z-index:20}
 
 .fab.cal{right:auto;left:calc(max(16px,env(safe-area-inset-left,0px)) + 4px)}
+.fab.notes{right:auto;left:50%;transform:translateX(-50%)}
+
+/* Note */
+.notelist{display:flex;flex-direction:column;gap:8px}
+.note{display:flex;flex-direction:column;gap:3px;text-align:left;width:100%;background:var(--field);border:1px solid var(--line);border-radius:14px;padding:12px 14px;color:var(--ink);font:inherit}
+.note .nt{font-weight:700;font-size:16px;overflow-wrap:anywhere}
+.note .np{font-size:14px;color:var(--muted);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere}
+.note .nd{font-family:var(--f-mono);font-size:11px;color:var(--muted)}
+.notes-empty{text-align:center;padding:24px 12px;border:1.5px dashed var(--line);border-radius:16px;color:var(--muted);font-size:14px}
+#noteText{min-height:42vh;font-size:16px;line-height:1.5;resize:none}
 
 /* Calendario del mese */
 .calhead{display:flex;align-items:center;justify-content:space-between;gap:8px}
@@ -244,7 +254,7 @@ input[type=time]::-webkit-calendar-picker-indicator,input[type=date]::-webkit-ca
 .undo{position:fixed;left:50%;bottom:calc(92px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);display:flex;gap:14px;align-items:center;background:var(--surface);color:var(--ink);border:1px solid var(--line);padding:8px 8px 8px 16px;border-radius:14px;font-size:14px;font-weight:700;z-index:41;box-shadow:0 8px 24px rgba(0,0,0,.25);white-space:nowrap}
 .undo[hidden]{display:none}
 .undo button{height:34px;padding:0 14px;border-radius:10px;border:0;background:var(--ink);color:#111214;font-weight:700}
-.toast{position:fixed;left:50%;bottom:calc(92px + env(safe-area-inset-bottom,0px));transform:translateX(-50%) translateY(20px);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:12px;font-size:14px;font-weight:700;opacity:0;transition:.2s;z-index:40;pointer-events:none;white-space:nowrap}
+.toast{position:fixed;left:50%;bottom:calc(92px + env(safe-area-inset-bottom,0px));transform:translateX(-50%) translateY(20px);background:var(--ink);color:#111214;padding:10px 16px;border-radius:12px;font-size:14px;font-weight:700;opacity:0;transition:.2s;z-index:40;pointer-events:none;white-space:nowrap}
 .toast.show{opacity:1;transform:translateX(-50%)}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
@@ -292,6 +302,7 @@ input[type=time]::-webkit-calendar-picker-indicator,input[type=date]::-webkit-ca
   <div class="status" id="status">Caricamento…</div>
 </div>
 
+<button class="fab notes" id="notesFab" aria-label="Note"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3.5H7a2.5 2.5 0 0 0-2.5 2.5v12A2.5 2.5 0 0 0 7 20.5h10a2.5 2.5 0 0 0 2.5-2.5V9z"/><path d="M14 3.5V9h5.5M8.5 13h7M8.5 16.5h4.5"/></svg></button>
 <button class="fab cal" id="calFab" aria-label="Calendario del mese"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="3"/><path d="M3.5 10h17M8 3v4M16 3v4"/><circle cx="8.5" cy="14.5" r="0.6" fill="currentColor"/><circle cx="12" cy="14.5" r="0.6" fill="currentColor"/><circle cx="15.5" cy="14.5" r="0.6" fill="currentColor"/></svg></button>
 <button class="fab" id="fab" aria-label="Nuova attività"><svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" aria-hidden="true"><path d="M12 4v16M4 12h16"/></svg></button>
 
@@ -370,6 +381,24 @@ input[type=time]::-webkit-calendar-picker-indicator,input[type=date]::-webkit-ca
 <div class="viewer" id="viewer" hidden role="dialog" aria-modal="true" aria-label="Foto">
   <img id="viewerImg" alt="Foto dell'attività">
   <button type="button" class="vclose" id="viewerClose" aria-label="Chiudi foto"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+</div>
+<div class="sheet" id="notesSheet" role="dialog" aria-modal="true" aria-labelledby="notesTitle">
+  <div style="max-width:560px;margin:0 auto;display:flex;flex-direction:column;gap:12px">
+    <div class="shead"><h3 id="notesTitle">Note</h3><button type="button" class="xclose" id="notesX" aria-label="Chiudi note"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+    <button type="button" class="btn primary" id="noteNew">+ Nuova nota</button>
+    <div class="notelist" id="noteList"></div>
+  </div>
+</div>
+<div class="sheet" id="noteSheet" role="dialog" aria-modal="true" aria-labelledby="noteTitle" style="z-index:33">
+  <form id="noteForm" autocomplete="off" style="max-width:560px;margin:0 auto;display:flex;flex-direction:column;gap:12px">
+    <div class="shead"><h3 id="noteTitle">Nuova nota</h3><button type="button" class="xclose" id="noteX" aria-label="Chiudi"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+    <textarea id="noteText" placeholder="Scrivi qui… La prima riga diventa il titolo." maxlength="20000"></textarea>
+    <div class="actions">
+      <button type="button" class="btn danger" id="noteDel" hidden>Elimina</button>
+      <div class="confirm" id="noteConfirm" hidden><span>Eliminare?</span><button type="button" class="btn danger" id="noteDelYes" style="height:36px">Sì, elimina</button><button type="button" class="btn" id="noteDelNo" style="height:36px">No</button></div>
+      <div class="right"><button type="button" class="btn" id="noteCancel">Annulla</button><button type="submit" class="btn primary">Salva</button></div>
+    </div>
+  </form>
 </div>
 <div class="toast" id="toast" role="status"></div>
 <div class="undo" id="undo" hidden role="status"><span id="undoTxt">Attività eliminata</span><button type="button" id="undoBtn">Annulla</button></div>
@@ -850,7 +879,7 @@ input[type=time]::-webkit-calendar-picker-indicator,input[type=date]::-webkit-ca
   }
   function closeSheet(){ $("scrim").classList.remove("open"); $("sheet").classList.remove("open"); state.editing = null; document.activeElement?.blur(); }
   $("fab").onclick = () => openSheet();
-  $("cancel").onclick = closeSheet; $("scrim").onclick = () => { if ($("apSheet").classList.contains("open")) { closeAppt(); return; } closeSheet(); $("calSheet").classList.remove("open"); };
+  $("cancel").onclick = closeSheet; $("scrim").onclick = () => { if ($("noteSheet").classList.contains("open")) { closeNote(); return; } if ($("notesSheet").classList.contains("open")) { closeNotes(); return; } if ($("apSheet").classList.contains("open")) { closeAppt(); return; } closeSheet(); $("calSheet").classList.remove("open"); };
   $("form").addEventListener("submit", e => {
     e.preventDefault();
     const title = $("fTitle").value.trim(); if (!title) return;
@@ -935,8 +964,64 @@ input[type=time]::-webkit-calendar-picker-indicator,input[type=date]::-webkit-ca
   }
   function closeCal(){ $("calSheet").classList.remove("open"); $("scrim").classList.remove("open"); }
 
+  /* ---------- Note ---------- */
+  let notes = [], notesLoaded = false, noteEditId = null;
+  async function loadNotes(){
+    let items = local.get("notes")?.items;
+    if (store) { try { const sn = await store.col.doc("notes").get(); if (sn.exists && Array.isArray(sn.data().items)) items = sn.data().items; } catch {} }
+    notes = Array.isArray(items) ? items : []; notesLoaded = true;
+  }
+  function saveNotes(){
+    const body = { items: notes, updatedAt: new Date().toISOString() };
+    local.set("notes", body);
+    if (store) writeChain = writeChain.then(() => store.col.doc("notes").set(body)).catch(() => toast("Nota non salvata sull'account, riprova"));
+  }
+  const noteParts = t => { const lines = t.trim().split(/\n/); const title = lines.shift().trim() || "Nota senza titolo"; return { title, rest: lines.join(" ").trim() }; };
+  function renderNotes(){
+    const list = notes.slice().sort((a,b) => (b.updatedAt||"").localeCompare(a.updatedAt||""));
+    $("noteList").innerHTML = list.length ? list.map(n => {
+      const { title, rest } = noteParts(n.text || "");
+      const d = new Date(n.updatedAt || Date.now());
+      const when = keyOf(d) === keyOf(new Date()) ? "oggi " + d.toLocaleTimeString("it-IT",{hour:"2-digit",minute:"2-digit"}) : d.toLocaleDateString("it-IT",{day:"numeric",month:"short",year: d.getFullYear() === new Date().getFullYear() ? undefined : "numeric"});
+      return `<button type="button" class="note" data-note="${esc(n.id)}"><span class="nt">${esc(title)}</span>${rest ? `<span class="np">${esc(rest)}</span>` : ""}<span class="nd">${esc(when)}</span></button>`;
+    }).join("") : `<div class="notes-empty">Nessuna nota. Tocca "+ Nuova nota" per scriverne una.</div>`;
+  }
+  async function openNotes(){
+    if (!notesLoaded) $("noteList").innerHTML = `<div class="notes-empty">Caricamento…</div>`;
+    $("scrim").classList.add("open"); $("notesSheet").classList.add("open");
+    await loadNotes(); renderNotes();
+  }
+  function closeNotes(){ $("notesSheet").classList.remove("open"); if (!$("noteSheet").classList.contains("open")) $("scrim").classList.remove("open"); }
+  function openNote(n){
+    noteEditId = n ? n.id : null;
+    $("noteTitle").textContent = n ? "Nota" : "Nuova nota";
+    $("noteText").value = n ? (n.text || "") : "";
+    $("noteDel").hidden = !n; $("noteConfirm").hidden = true;
+    $("scrim").classList.add("open"); $("noteSheet").classList.add("open");
+    if (!n) setTimeout(() => $("noteText").focus(), 260);
+  }
+  function closeNote(){ $("noteSheet").classList.remove("open"); noteEditId = null; document.activeElement?.blur?.(); if (!$("notesSheet").classList.contains("open")) $("scrim").classList.remove("open"); }
+  $("notesFab").onclick = openNotes;
+  $("notesX").onclick = closeNotes;
+  $("noteNew").onclick = () => openNote(null);
+  $("noteList").onclick = e => { const b = e.target.closest("[data-note]"); if (!b) return; const n = notes.find(x => x.id === b.dataset.note); if (n) openNote(n); };
+  $("noteX").onclick = closeNote; $("noteCancel").onclick = closeNote;
+  $("noteForm").addEventListener("submit", e => {
+    e.preventDefault();
+    const text = $("noteText").value.replace(/\s+$/, "");
+    if (!text.trim()) { if (noteEditId) { notes = notes.filter(n => n.id !== noteEditId); saveNotes(); renderNotes(); } closeNote(); return; }
+    const now = new Date().toISOString();
+    if (noteEditId) { const n = notes.find(x => x.id === noteEditId); if (n) { n.text = text; n.updatedAt = now; } }
+    else notes.push({ id: uid(), text, createdAt: now, updatedAt: now });
+    const isNew = !noteEditId;
+    saveNotes(); renderNotes(); closeNote(); toast(isNew ? "Nota salvata" : "Nota aggiornata");
+  });
+  $("noteDel").onclick = () => { $("noteDel").hidden = true; $("noteConfirm").hidden = false; };
+  $("noteDelNo").onclick = () => { $("noteDel").hidden = false; $("noteConfirm").hidden = true; };
+  $("noteDelYes").onclick = () => { const id = noteEditId; notes = notes.filter(n => n.id !== id); saveNotes(); renderNotes(); closeNote(); toast("Nota eliminata"); };
+
   /* ---------- Trascina verso il basso per chiudere i pannelli ---------- */
-  [["sheet", () => closeSheet()], ["calSheet", () => closeCal()], ["apSheet", () => closeAppt()]].forEach(([id, close]) => {
+  [["sheet", () => closeSheet()], ["calSheet", () => closeCal()], ["apSheet", () => closeAppt()], ["notesSheet", () => closeNotes()], ["noteSheet", () => closeNote()]].forEach(([id, close]) => {
     const el = $(id); let d = null;
     el.addEventListener("touchstart", e => {
       const top = e.touches[0].clientY - el.getBoundingClientRect().top < 72;   // la parte alta del pannello trascina sempre
@@ -1011,7 +1096,7 @@ input[type=time]::-webkit-calendar-picker-indicator,input[type=date]::-webkit-ca
       }
       const photos = {};
       for (const id of ids) { try { const b = await idb.get(id); if (b) photos[id] = await blobToDataURL(b); } catch {} }
-      const data = { app: "La mia Giornata", version: 1, createdAt: new Date().toISOString(), days, photos };
+      const data = { app: "La mia Giornata", version: 1, createdAt: new Date().toISOString(), days, photos, notes: local.get("notes") };
       const name = `giornata-backup-${keyOf(new Date())}.json`;
       const file = new File([JSON.stringify(data)], name, { type: "application/json" });
       if (navigator.canShare?.({ files: [file] })) {
@@ -1031,6 +1116,7 @@ input[type=time]::-webkit-calendar-picker-indicator,input[type=date]::-webkit-ca
       let n = 0;
       for (const [k, v] of Object.entries(data.days)) if (/^\d{4}-\d{2}-\d{2}$/.test(k) && v) { local.set(k, v); n++; }
       for (const [id, url] of Object.entries(data.photos || {})) { try { const b = await (await fetch(url)).blob(); await idb.put(id, b); } catch {} }
+      if (data.notes && Array.isArray(data.notes.items)) { local.set("notes", data.notes); notesLoaded = false; }
       $("bkNote").textContent = `Ripristinati ${n} giorni.`;
       subscribe(); await loadCalData(); renderCal(); renderDayPanel();
     } catch { $("bkNote").textContent = "Questo file non è un backup di Giornata."; }
